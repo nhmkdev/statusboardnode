@@ -1,0 +1,80 @@
+<html>
+<body>
+    <!-- TODO: favicon -->
+    <!-- TODO: instead of a large constant update the server could maintain a value indicating the version of the data and that value could be queried to determine if a full update is needed -->
+
+<!-- Server populates the jqueryscript with the contents specified in the config.js -->
+<script src="jqueryscript"></script>
+<script>
+var updateRequester = null;
+var updatePending = false;
+
+function getUpdate() 
+{
+    if(updatePending)
+    {
+        return;
+    }
+    
+    updatePending = true;
+    if(updateRequester != null)
+    {
+        clearTimeout(updateRequester);
+    }
+
+    $.ajax(
+    {
+        cache : false,
+        // setup the server address
+        url : '/update',
+        data : {},
+        success : function(response, code, xhr) 
+        {
+
+            if ('OK' == response) 
+            {
+                callNode();
+                return false;
+            }
+            document.getElementById('test').innerHTML = response;
+            updateRequester = setTimeout(function() { getUpdate(); }, 5000);
+            // TODO: this is a HAAAAACK and requires a bit more thought
+            updatePending = false;
+        }
+
+    });
+}
+
+function requestUpdate()
+{
+    console.log('requesting update:' + updatePending);
+    getUpdate();
+}
+
+function sendUpdate(updateData)
+{
+    $.ajax(
+    {
+        cache : false,
+        // setup the server address
+        url : '/sendupdate',
+        type: "post",
+        data : { sampleField:updateData },
+        success : function(response, code, xhr) 
+        {
+            // TODO...
+            requestUpdate();
+        }
+    });    
+}
+
+requestUpdate();
+</script>
+
+
+Enter some text and press enter to set the "last update" field.<br>
+<input type="text" id="filter" value="" onchange="sendUpdate(document.getElementById('filter').value)"/>
+<hr>
+<div id="test"></div>
+</body>
+</html>
