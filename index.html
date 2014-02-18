@@ -1,15 +1,75 @@
 <html>
 <body>
-    <!-- TODO: favicon -->
-    <!-- TODO: instead of a large constant update the server could maintain a value indicating the version of the data and that value could be queried to determine if a full update is needed -->
-
-<!-- Server populates the jqueryscript with the contents specified in the config.js -->
-<script src="jqueryscript"></script>
+<!-- TODO: favicon -->
+<!-- Server populates the JQUERYSCRIPT with the contents specified in the config.js -->
+<!--JQUERYSCRIPT-->
 <script>
+
+
 var updateRequester = null;
 var updatePending = false;
+// TODO: move all this to another script file
 
-function getUpdate() 
+var boardId = window.location.pathname.replace('/', '').replace('/', '');
+
+console.log('pathname:' + boardId);
+
+var statusBoardData = null;
+
+var FieldBuilder = {};
+
+FieldBuilder.getTextObject = function(id, val)
+{
+    var obj =
+    {
+        i:id,
+        t:'text',
+        v:
+        {
+            t:val
+        }
+    };
+    return obj;
+}
+
+FieldBuilder.getTextField = function(id)
+{
+    return FieldBuilder.getTextObject(id, document.getElementById(id).value);
+}
+
+function BrowserLayoutControl()
+{
+    this.controlMap = {};
+    this.controlMap['text'] = this.addTextField;
+}
+
+BrowserLayoutControl.prototype.processUpdate = function(updateData)
+{
+    var htmlString = '';
+    for(var idx = 0, len = updateData.s.length; idx < len; idx++)
+    {
+        var item = updateData.s[idx];
+        var controlFunc = this.controlMap[item.t];
+        if(typeof controlFunc !== 'undefined')
+        {
+            htmlString += controlFunc(item);
+        }
+        else
+        {
+
+        }
+    }
+    document.getElementById('statusdata').innerHTML = htmlString;
+}
+
+BrowserLayoutControl.prototype.addTextField = function(item)
+{
+    return '<input type="text" id="' + item.i + '" value="'+ item.v.t +'" onchange="pushUpdate(FieldBuilder.getTextField(' + item.i +'))"/><br>';
+}
+
+var layoutControl = new BrowserLayoutControl();
+
+function sendUpdate(forceUpdate)
 {
     if(updatePending)
     {
@@ -22,59 +82,95 @@ function getUpdate()
         clearTimeout(updateRequester);
     }
 
-    $.ajax(
+    if(!forceUpdate)
     {
-        cache : false,
-        // setup the server address
-        url : '/update',
-        data : {},
-        success : function(response, code, xhr) 
+        $.ajax(
         {
-
-            if ('OK' == response) 
+            cache : false,
+            // setup the server address
+            type: "GET",
+            url : window.location,
+            data: {action:'getdataversion'},
+            success : function(response, code, xhr)
             {
-                callNode();
-                return false;
+                updatePending = false;
+                if(statusBoardData.v != response)
+                {
+                    // mismatched version, request full update
+                    console.log('data version mismatch forcing update');
+                    sendUpdate(true);
+                }
+                else
+                {
+                    console.log('data is up to date waiting...');
+                    updateRequester = setTimeout(function() { sendUpdate(); }, 5000);
+                }
             }
-            document.getElementById('test').innerHTML = response;
-            updateRequester = setTimeout(function() { getUpdate(); }, 5000);
-            // TODO: this is a HAAAAACK and requires a bit more thought
-            updatePending = false;
-        }
-
-    });
+        });
+    }
+    else
+    {
+        $.ajax(
+        {
+            cache : false,
+            // setup the server address
+            type: "GET",
+            url : window.location,
+            data: {action:'sendupdate'},
+            success : function(response, code, xhr)
+            {
+                // TODO: this is a HAAAAACK and requires a bit more thought
+                updatePending = false;
+                try
+                {
+                    console.log('x:' + response);
+                    // TODO: rethink the storage of this on the client (how and where)
+                    statusBoardData = JSON.parse(response);
+                    layoutControl.processUpdate(statusBoardData);
+                }
+                catch (e)
+                {
+                    console.error("Parsing error:", e);
+                }
+                updateRequester = setTimeout(function() { sendUpdate(); }, 5000);
+            }
+        });
+    }
 }
 
-function requestUpdate()
+function pushUpdate(updateData)
 {
-    console.log('requesting update:' + updatePending);
-    getUpdate();
-}
+    // TODO: maintain a client side copy of the status board object to simplify this...
+    var obj = {};
+    obj.s =
+    [
+        updateData
+    ];
 
-function sendUpdate(updateData)
-{
     $.ajax(
     {
         cache : false,
         // setup the server address
-        url : '/sendupdate',
-        type: "post",
-        data : { sampleField:updateData },
-        success : function(response, code, xhr) 
+        url : window.location,
+        type: "POST",
+        processData: false,
+        data: JSON.stringify({ action:'pushupdate', data:obj}),
+        success : function(response, code, xhr)
         {
             // TODO...
-            requestUpdate();
+            sendUpdate(true);
         }
     });    
 }
 
-requestUpdate();
+// TODO: consider long polling instead of periodic polling
+// AJAX Abort http://stackoverflow.com/questions/446594/abort-ajax-requests-using-jquery
+
+sendUpdate(true);
 </script>
 
-
-Enter some text and press enter to set the "last update" field.<br>
-<input type="text" id="filter" value="" onchange="sendUpdate(document.getElementById('filter').value)"/>
+StatusBoard
 <hr>
-<div id="test"></div>
+<div id="statusdata"></div>
 </body>
 </html>

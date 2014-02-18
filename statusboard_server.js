@@ -1,20 +1,34 @@
 var config = require("./config");
 var util = require("./util");
 var server = require("./server");
-var requestHandlers = require("./requestHandlers");
+var requestRouters = require("./requestRouters");
+var requestHandlers = require("./requesthandlers");
 
-var handlers = {};
-handlers['/'] = getHandlerConfig(requestHandlers.start);
-handlers['/jqueryscript'] = getHandlerConfig(requestHandlers.jqueryscript);
-handlers['/update'] = getHandlerConfig(requestHandlers.update);
-handlers['/sendupdate'] = getHandlerConfig(requestHandlers.sendUpdate);
-
-function getHandlerConfig(handler, postDataFormat)
+var routers = {};
+routers['POST'] =
 {
-    var handlerObj = {};
-    handlerObj.handler = handler;
-    handlerObj.postDataFormat = util.getProperty(postDataFormat, 'utf8');
-    return handlerObj;
+    hasQueryString:false,
+    func:requestRouters.postrouter
+};
+routers['GET'] =
+{
+    hasQueryString:true,
+    func:requestRouters.getrouter
 }
 
-server.start(handlers, config.settings.port);
+var handlers = {};
+addHandlerConfig('/', requestHandlers.root); // handler for loading a given status board
+// request handlers (action param of the url)
+addHandlerConfig('sendupdate', requestHandlers.sendUpdate);
+addHandlerConfig('pushupdate', requestHandlers.pushUpdate);
+addHandlerConfig('getdataversion', requestHandlers.getDataVersion);
+
+function addHandlerConfig(path, handlerFunc, postDataFormat)
+{
+    var handlerObj = {};
+    handlerObj.func = handlerFunc;
+    handlerObj.postDataFormat = util.getProperty(postDataFormat, 'utf8');
+    handlers[path] = handlerObj;
+}
+
+server.start(routers, handlers, config.settings.port);

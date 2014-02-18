@@ -1,74 +1,115 @@
 var config = require("./config");
+var util = require("./util");
 var fs = require('fs');
-var querystring = require("querystring");
 
-var updateCount = 0;
-var lastUpdate = 'notta';
+// TODO: data and processors should be part of objects so each instance of the status server can run infinte status boards
+// TODO: cache the json stringified version of the data (and reset on version change)
+
 var fileCache = {}; // unlimited cache of files (not recommended for mammoth sites haha)
 
 ///////////
-// Handlers
+// Handlers prototype (statusBoard, pathname (not inclusive of board id), response, postData)
 ///////////
-function start(pathname, response)
+function root(statusBoard, response)
 {
-	console.log("Request handler 'start' was called.");
-	fileReadAndCache('./index.html', response);
+	console.log("Request handler 'root' was called.");
+    var cached = fileCache[config.settings.indexfile];
+    if(typeof cached !== 'undefined')
+    {
+        respondWithContents(response, cached);
+    }
+    else
+    {
+        fs.readFile(config.settings.indexfile, {encoding:'utf8'}, function (indexFileErr, indexFileData)
+        {
+            // TODO an actual error
+            if (indexFileErr) throw indexFileErr;
+            fs.readFile(config.settings.jqueryscript, {encoding:'utf8'}, function (jqueryFileErr, jqueryFileData)
+            {
+                // TODO an actual error
+                if (jqueryFileErr) throw jqueryFileErr;
+                var combinedIndex = indexFileData.toString().replace('<!--JQUERYSCRIPT-->', '<script>' + jqueryFileData + '</script>')
+                fileCache[config.settings.indexfile] = combinedIndex;
+                respondWithContents(response, combinedIndex);
+            });
+        });
+    }
 }
 
-function update(pathname, response)
+function sendUpdate(statusBoard, response)
 {
-	response.writeHead(200, {"Content-Type": "text/html"});
-	response.write('Update' + (++updateCount) + '<br>LastUpdate: ' + lastUpdate);
-	response.end();	
+    var data = JSON.stringify(statusBoard, dataReplacer);
+    console.log('Sending: ' + data);
+    respondWithContents(response, data);
 }
 
-function sendUpdate(pathname, response, postData)
+function getDataVersion(statusBoard, response)
+{
+    respondWithContents(response, '' + statusBoard.v);
+}
+
+function pushUpdate(statusBoard, response, postData)
 {
 	console.log('POSTDATA:' + postData);
-	lastUpdate = querystring.parse(postData).sampleField;
-	response.writeHead(200, {"Content-Type": "text/html"});
-	response.end();	
+    var updateData;
+    try
+    {
+        updateData = postData.data;
+    }
+    catch(e)
+    {
+        console.log(e);
+        // TODO: some error to the client ?
+        respondWithContents(response);
+        return;
+    }
+
+    for(var idx = 0, len = updateData.s.length; idx < len; idx++)
+    {
+        var sourceObj = updateData.s[idx];
+        var targetObj = statusBoard.smap[sourceObj.i];
+        if(typeof targetObj !== 'undefined')
+        {
+            console.log('Updated data for field: ' + sourceObj.i);
+            targetObj.t = sourceObj.t;
+            targetObj.v = sourceObj.v;
+            statusBoard.v++;
+        }
+        else
+        {
+            console.log('Failed to map update data: ' + sourceObj.i);
+        }
+    }
+
+    respondWithContents(response);
 }
 
-function jqueryscript(pathname, response)
-{
-    fileReadAndCache(config.settings.jqueryscript, response);
-}
-
-exports.start = start;
-exports.jqueryscript = jqueryscript;
-exports.update = update;
+exports.root = root;
 exports.sendUpdate = sendUpdate;
+exports.pushUpdate = pushUpdate;
+exports.getDataVersion = getDataVersion;
 
 //////////
 // Support
 //////////
 
-function fileReadAndCache(path, response)
+// TODO: this should be part of the class that manages the statusboard object
+function dataReplacer(key, value)
 {
-    // TODO: this will cause the cache to never update unless node.js is run again (make the file object include a datetime stamp?)
-    if(typeof fileCache[path] === 'undefined')
+    if (key === "smap")
     {
-        fs.readFile(path, function (err, data)
-        {
-            // TODO an actual error
-            if (err) throw err;
-            fileCacheObj = {};
-            fileCacheObj.data = data;
-            fileCache[path] = fileCacheObj;
-            respondWithContents(response, data);
-        });
+        return undefined;
     }
-    else
-    {
-        respondWithContents(response, fileCache[path].data);
-    }
+    return value;
 }
 
 function respondWithContents(response, data)
 {
     //response.writeHead(200, {"Content-Type": "text/plain"});
     response.writeHead(200, {"Content-Type": "text/html"});
-    response.write(data);
+    if(typeof data !== 'undefined')
+    {
+        response.write(data);
+    }
     response.end();
 }

@@ -4,7 +4,7 @@
  @param {...} - All remaining params are strings to check the object for the existence of a corresponding property
  @return {bool} true on success, false otherwise
  */
-exports.hasAllProperties = function(obj)
+function hasAllProperties(obj)
 {
     if(typeof obj !== 'undefined' && obj != null)
     {
@@ -26,7 +26,7 @@ exports.hasAllProperties = function(obj)
  @param {object} def - The default if the property is not found
  @return {object} The value of the property
  */
-exports.getProperty = function(arg, def)
+function getProperty(arg, def)
 {
     return (typeof arg !== 'undefined') ? arg : def;
 }
@@ -36,7 +36,7 @@ exports.getProperty = function(arg, def)
  @param {object} arg - The object to check
  @return {bool} true if the object is defined, false otherwise
  */
-exports.defined = function(arg)
+function defined(arg)
 {
     return typeof arg !== 'undefined';
 }
@@ -46,7 +46,7 @@ exports.defined = function(arg)
  @param {object} obj - The object to check
  @return {bool} True if the object is a function, false otherwise
  */
-exports.isFunction = function(obj)
+function isFunction(obj)
 {
     return typeof obj === 'function';
 }
@@ -56,7 +56,7 @@ exports.isFunction = function(obj)
  @param {object} arr - The object to check
  @return {bool} True if the object is an array, false otherwise
  */
-exports.isArray = function(arr)
+function isArray(arr)
 {
     return Object.prototype.toString.call(arr) === '[object Array]';
 }
@@ -68,9 +68,9 @@ exports.isArray = function(arr)
  @param (object) obj - The object to map the items into (optional, will create a new object if necessary)
  @return (object) - The object with the mapped items, or null on error
  */
-exports.createArrayToObjectMap = function(arr, prop, obj)
+function createArrayToObjectMap(arr, prop, obj)
 {
-    if(!Util.defined(obj)) { obj = {}; }
+    if(!defined(obj)) { obj = {}; }
     //TODO: more error checking?
     for(var x = 0, len = arr.length; x < len; x++)
     {
@@ -78,3 +78,10 @@ exports.createArrayToObjectMap = function(arr, prop, obj)
     }
     return obj;
 }
+
+exports.hasAllProperties = hasAllProperties;
+exports.getProperty = getProperty;
+exports.defined = defined;
+exports.isFunction = isFunction;
+exports.isArray = isArray;
+exports.createArrayToObjectMap = createArrayToObjectMap;
