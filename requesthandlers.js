@@ -8,15 +8,16 @@ var fs = require('fs');
 var fileCache = {}; // unlimited cache of files (not recommended for mammoth sites haha)
 
 ///////////
-// Handlers prototype (statusBoard, pathname (not inclusive of board id), response, postData)
+// Handlers prototype -- (urlData, statusBoardCollection, response, postData)
 ///////////
-function root(statusBoard, response)
+function root(urlData, statusBoardCollection, response)
 {
 	console.log("Request handler 'root' was called.");
     var cached = fileCache[config.settings.indexfile];
     if(typeof cached !== 'undefined')
     {
-        respondWithContents(response, cached);
+        respondWithContents(response, cached, 'text/html');
+        //console.log('cache hit!');
     }
     else
     {
@@ -30,25 +31,25 @@ function root(statusBoard, response)
                 if (jqueryFileErr) throw jqueryFileErr;
                 var combinedIndex = indexFileData.toString().replace('<!--JQUERYSCRIPT-->', '<script>' + jqueryFileData + '</script>')
                 fileCache[config.settings.indexfile] = combinedIndex;
-                respondWithContents(response, combinedIndex);
+                respondWithContents(response, combinedIndex, 'text/html');
             });
         });
     }
 }
 
-function sendUpdate(statusBoard, response)
+function sendUpdate(urlData, statusBoardCollection, response)
 {
-    var data = JSON.stringify(statusBoard, dataReplacer);
+    var data = statusBoardCollection[urlData.pathname].getBoardAsJSON();
     console.log('Sending: ' + data);
     respondWithContents(response, data);
 }
 
-function getDataVersion(statusBoard, response)
+function getDataVersion(urlData, statusBoardCollection, response)
 {
-    respondWithContents(response, '' + statusBoard.v);
+    respondWithContents(response, '' + statusBoardCollection[urlData.pathname].v);
 }
 
-function pushUpdate(statusBoard, response, postData)
+function pushItemUpdate(urlData, statusBoardCollection, response, postData)
 {
 	console.log('POSTDATA:' + postData);
     var updateData;
@@ -64,49 +65,60 @@ function pushUpdate(statusBoard, response, postData)
         return;
     }
 
-    for(var idx = 0, len = updateData.s.length; idx < len; idx++)
-    {
-        var sourceObj = updateData.s[idx];
-        var targetObj = statusBoard.smap[sourceObj.i];
-        if(typeof targetObj !== 'undefined')
-        {
-            console.log('Updated data for field: ' + sourceObj.i);
-            targetObj.t = sourceObj.t;
-            targetObj.v = sourceObj.v;
-            statusBoard.v++;
-        }
-        else
-        {
-            console.log('Failed to map update data: ' + sourceObj.i);
-        }
-    }
-
+    var statusBoard = statusBoardCollection[urlData.pathname];
+    statusBoard.updateItems(updateData.s);
     respondWithContents(response);
 }
 
+function addItem(urlData, statusBoardCollection, response, postdata)
+{
+    var statusBoard = statusBoardCollection[urlData.pathname];
+    statusBoard.addItem('text', postdata.v);
+    respondWithContents(response);
+}
+
+function deleteItem(urlData, statusBoards, response, postdata)
+{
+    console.log('Deleting Item: [' + postdata.i + ']');
+    var statusBoard = statusBoards[urlData.pathname];
+    statusBoard.deleteItem(postdata.i);
+    respondWithContents(response);
+}
+
+function moveItem(urlData, statusBoards, response, postdata)
+{
+    // TODO: determine how best to handle this...
+}
+
+function addBoard(urlData, statusBoards, response)
+{
+
+}
+
+function deleteBoard(urlData, statusBoards, response)
+{
+
+}
+
+// TODO: just make this return a single object with all the functions mapped into it?
 exports.root = root;
 exports.sendUpdate = sendUpdate;
-exports.pushUpdate = pushUpdate;
+exports.pushItemUpdate = pushItemUpdate;
 exports.getDataVersion = getDataVersion;
+exports.addBoard = addBoard;
+exports.addItem = addItem;
+exports.deleteItem = deleteItem;
 
 //////////
 // Support
 //////////
 
-// TODO: this should be part of the class that manages the statusboard object
-function dataReplacer(key, value)
+function respondWithContents(response, data, contenttype)
 {
-    if (key === "smap")
-    {
-        return undefined;
-    }
-    return value;
-}
 
-function respondWithContents(response, data)
-{
+    contenttype = util.getProperty(contenttype, 'text/plan');
     //response.writeHead(200, {"Content-Type": "text/plain"});
-    response.writeHead(200, {"Content-Type": "text/html"});
+    response.writeHead(200, {"Content-Type": contenttype});
     if(typeof data !== 'undefined')
     {
         response.write(data);

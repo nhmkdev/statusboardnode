@@ -4,7 +4,7 @@
 <!-- Server populates the JQUERYSCRIPT with the contents specified in the config.js -->
 <!--JQUERYSCRIPT-->
 <script>
-
+// TODO figure out how to share code between server and client
 
 var updateRequester = null;
 var updatePending = false;
@@ -64,7 +64,8 @@ BrowserLayoutControl.prototype.processUpdate = function(updateData)
 
 BrowserLayoutControl.prototype.addTextField = function(item)
 {
-    return '<input type="text" id="' + item.i + '" value="'+ item.v.t +'" onchange="pushUpdate(FieldBuilder.getTextField(' + item.i +'))"/><br>';
+    return '<input type="text" id="' + item.i + '" value="'+ item.v.t +'" onchange="pushUpdate(FieldBuilder.getTextField(' + item.i +'))"/>' +
+            '<input type="button" value="-" onclick="deleteItem(\'' + item.i + '\')"><br>';
 }
 
 var layoutControl = new BrowserLayoutControl();
@@ -84,14 +85,8 @@ function sendUpdate(forceUpdate)
 
     if(!forceUpdate)
     {
-        $.ajax(
-        {
-            cache : false,
-            // setup the server address
-            type: "GET",
-            url : window.location,
-            data: {action:'getdataversion'},
-            success : function(response, code, xhr)
+        ajaxGETRequest({action:'getdataversion'},
+            function(response, code, xhr)
             {
                 updatePending = false;
                 if(statusBoardData.v != response)
@@ -106,18 +101,12 @@ function sendUpdate(forceUpdate)
                     updateRequester = setTimeout(function() { sendUpdate(); }, 5000);
                 }
             }
-        });
+        );
     }
     else
     {
-        $.ajax(
-        {
-            cache : false,
-            // setup the server address
-            type: "GET",
-            url : window.location,
-            data: {action:'sendupdate'},
-            success : function(response, code, xhr)
+        ajaxGETRequest({action:'sendupdate'},
+            function(response, code, xhr)
             {
                 // TODO: this is a HAAAAACK and requires a bit more thought
                 updatePending = false;
@@ -134,7 +123,7 @@ function sendUpdate(forceUpdate)
                 }
                 updateRequester = setTimeout(function() { sendUpdate(); }, 5000);
             }
-        });
+        );
     }
 }
 
@@ -147,20 +136,67 @@ function pushUpdate(updateData)
         updateData
     ];
 
-    $.ajax(
-    {
-        cache : false,
-        // setup the server address
-        url : window.location,
-        type: "POST",
-        processData: false,
-        data: JSON.stringify({ action:'pushupdate', data:obj}),
-        success : function(response, code, xhr)
+    ajaxPOSTRequest({ action:'pushitemupdate', data:obj},
+        function(response, code, xhr)
         {
             // TODO...
             sendUpdate(true);
         }
-    });    
+    );
+}
+
+function addItem()
+{
+    // TODO: hard coded text creation...
+    ajaxPOSTRequest({action:'additem', v: { t:'new item' }},
+        function(response, code, xhr)
+        {
+            // TODO...
+            sendUpdate(true);
+        }
+    );
+}
+
+function deleteItem(id)
+{
+    // TODO: hard coded text creation...
+    ajaxPOSTRequest({action:'deleteitem', i:id},
+            function(response, code, xhr)
+            {
+                // TODO...
+                sendUpdate(true);
+            }
+    );
+}
+
+function ajaxGETRequest(data, success)
+{
+    $.ajax(
+    {
+        cache : false,
+        // setup the server address
+        type: 'GET',
+        processData: true,
+        url : window.location,
+        data: data,
+        success : success
+    }
+    );
+}
+
+function ajaxPOSTRequest(data, success)
+{
+    $.ajax(
+    {
+        cache : false,
+        // setup the server address
+        type: 'POST',
+        processData: false,
+        url : window.location,
+        data: JSON.stringify(data),
+        success : success
+    }
+    );
 }
 
 // TODO: consider long polling instead of periodic polling
@@ -172,5 +208,10 @@ sendUpdate(true);
 StatusBoard
 <hr>
 <div id="statusdata"></div>
+<hr>
+<div id="controls">
+    <input type="text" id="newitemtext" value="New Item"/>
+    <input type="button" value="+" onclick="addItem()">
+</div>
 </body>
 </html>

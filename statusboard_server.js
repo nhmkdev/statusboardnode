@@ -17,18 +17,32 @@ routers['GET'] =
 }
 
 var handlers = {};
-addHandlerConfig('/', requestHandlers.root); // handler for loading a given status board
+addHandlerConfig('/', requestHandlers.root, true); // handler for loading a given status board
 // request handlers (action param of the url)
-addHandlerConfig('sendupdate', requestHandlers.sendUpdate);
-addHandlerConfig('pushupdate', requestHandlers.pushUpdate);
-addHandlerConfig('getdataversion', requestHandlers.getDataVersion);
+// TODO: consider putting these into another object ?)
+addHandlerConfig('sendupdate', requestHandlers.sendUpdate, true);
+addHandlerConfig('pushitemupdate', requestHandlers.pushItemUpdate, true);
+addHandlerConfig('getdataversion', requestHandlers.getDataVersion, true);
+addHandlerConfig('addboard', requestHandlers.addBoard, false);
+addHandlerConfig('additem', requestHandlers.addItem, true);
+addHandlerConfig('deleteitem', requestHandlers.deleteItem, true);
 
-function addHandlerConfig(path, handlerFunc, postDataFormat)
+function addHandlerConfig(action, handlerFunc, requireValidBoardId, postDataFormat)
 {
     var handlerObj = {};
     handlerObj.func = handlerFunc;
+    if(config.settings.debug)
+    {
+        handlerObj.func = function(urlData, statusBoardCollection, response, postdata)
+        {
+            // TODO: central debug log call?
+            console.log('[DEBUG] HANDLER Called: ' + action);
+            handlerFunc(urlData, statusBoardCollection, response, postdata)
+        };
+    }
+    handlerObj.requireValidBoardId = util.getProperty(requireValidBoardId, false);
     handlerObj.postDataFormat = util.getProperty(postDataFormat, 'utf8');
-    handlers[path] = handlerObj;
+    handlers[action] = handlerObj;
 }
 
 server.start(routers, handlers, config.settings.port);

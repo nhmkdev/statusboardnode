@@ -1,7 +1,9 @@
 var url = require("url");
 var util = require("./util");
 
-function postrouter(handlers, request, response, statusBoard, urlData)
+// TODO: consider another way to get the required information from the routers to make the call in the server
+
+function postrouter(request, urlData, actionFunc, errorFunc)
 {
     request.setEncoding('utf8');
 
@@ -14,51 +16,30 @@ function postrouter(handlers, request, response, statusBoard, urlData)
 
     request.addListener("end", function()
     {
-        //console.log('POSTDATA:' + postData);
-
-        var postObj;
-        var requestHandler;
+        try
         {
-            postObj = JSON.parse(postData);
-
-            if (util.defined(handlers[postObj.action]))
-            {
-                requestHandler = handlers[postObj.action];
-            }
-            else
-            {
-                console.log("No request handler found for " + postObj.action);
-                response.writeHead(404, {"Content-Type": "text/plain"});
-                response.write("404 Not found");
-                response.end();
-                return;
-            }
+            // NOTE: assumes all post data is json
+            var postObj = JSON.parse(postData);
+            actionFunc(postObj.action, postObj);
         }
-        requestHandler.func(statusBoard, response, postObj);
+        catch(err)
+        {
+            errorFunc();
+            // TODO: return error
+        }
     });
 }
 
-function getrouter(handlers, request, response, statusBoard, urlData)
+function getrouter(request, urlData, actionFunc, errorFunc)
 {
-    // TODO: further define handlers to allow for non-existent boards? (so add can be implemented!)
-    if(typeof(statusBoard) === 'undefined')
+
+    var actionId = urlData.query['action'];
+    if(typeof actionId === 'undefined')
     {
-        response.writeHead(404, {"Content-Type": "text/plain"});
-        response.write("404 Not found");
-        response.end();
-        return;
-    }
-    var action = urlData.query['action'];
-    if(typeof action !== 'undefined')
-    {
-        handlers[action].func(statusBoard, response);
-    }
-    else
-    {
-        // this is the request for the main status board page /[boardid]
-        handlers['/'].func(statusBoard, response);
+        actionId = '/';
     }
 
+    actionFunc(actionId, null);
 }
 
 exports.postrouter = postrouter;
