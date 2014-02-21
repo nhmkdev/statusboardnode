@@ -1,9 +1,9 @@
 var config = require("./config");
-var util = require("./util");
 var server = require("./server");
 var requestRouters = require("./requestRouters");
 var requestHandlers = require("./requesthandlers");
 
+// Configure routers
 var routers = {};
 routers['POST'] =
 {
@@ -16,33 +16,19 @@ routers['GET'] =
     func:requestRouters.getrouter
 }
 
+// Configure handlers
 var handlers = {};
-addHandlerConfig('/', requestHandlers.root, true); // handler for loading a given status board
+requestHandlers.addHandlerConfig(handlers, '/', requestHandlers.root, true); // handler for loading a given status board
 // request handlers (action param of the url)
 // TODO: consider putting these into another object ?)
-addHandlerConfig('sendupdate', requestHandlers.sendUpdate, true);
-addHandlerConfig('pushitemupdate', requestHandlers.pushItemUpdate, true);
-addHandlerConfig('getdataversion', requestHandlers.getDataVersion, true);
-addHandlerConfig('addboard', requestHandlers.addBoard, false);
-addHandlerConfig('additem', requestHandlers.addItem, true);
-addHandlerConfig('deleteitem', requestHandlers.deleteItem, true);
+// TODO: add in the fields that must be specified with each as a validation step when calling the handler
+requestHandlers.addHandlerConfig(handlers, 'sendupdate', requestHandlers.sendUpdate, true);
+requestHandlers.addHandlerConfig(handlers, 'pushitemupdate', requestHandlers.pushItemUpdate, true);
+requestHandlers.addHandlerConfig(handlers, 'getdataversion', requestHandlers.getDataVersion, true);
+requestHandlers.addHandlerConfig(handlers, 'addboard', requestHandlers.addBoard, false);
+requestHandlers.addHandlerConfig(handlers, 'additem', requestHandlers.addItem, true);
+requestHandlers.addHandlerConfig(handlers, 'deleteitem', requestHandlers.deleteItem, true);
+requestHandlers.addHandlerConfig(handlers, 'moveitem', requestHandlers.moveItem, true);
 
-function addHandlerConfig(action, handlerFunc, requireValidBoardId, postDataFormat)
-{
-    var handlerObj = {};
-    handlerObj.func = handlerFunc;
-    if(config.settings.debug)
-    {
-        handlerObj.func = function(urlData, statusBoardCollection, response, postdata)
-        {
-            // TODO: central debug log call?
-            console.log('[DEBUG] HANDLER Called: ' + action);
-            handlerFunc(urlData, statusBoardCollection, response, postdata)
-        };
-    }
-    handlerObj.requireValidBoardId = util.getProperty(requireValidBoardId, false);
-    handlerObj.postDataFormat = util.getProperty(postDataFormat, 'utf8');
-    handlers[action] = handlerObj;
-}
-
+// Start the server!
 server.start(routers, handlers, config.settings.port);

@@ -37,6 +37,8 @@ function root(urlData, statusBoardCollection, response)
     }
 }
 
+// TODO: map these methods directly to statusboard methods (those that operate on a statusboard)?
+
 function sendUpdate(urlData, statusBoardCollection, response)
 {
     var data = statusBoardCollection[urlData.pathname].getBoardAsJSON();
@@ -87,7 +89,11 @@ function deleteItem(urlData, statusBoards, response, postdata)
 
 function moveItem(urlData, statusBoards, response, postdata)
 {
-    // TODO: determine how best to handle this...
+    // TODO: input validation!
+    console.log('Moving Item: [' + postdata.i + ']');
+    var statusBoard = statusBoards[urlData.pathname];
+    statusBoard.moveItem(postdata.i, postdata.d);
+    respondWithContents(response);
 }
 
 function addBoard(urlData, statusBoards, response)
@@ -100,6 +106,24 @@ function deleteBoard(urlData, statusBoards, response)
 
 }
 
+function addHandlerConfig(handlers, action, handlerFunc, requireValidBoardId, postDataFormat)
+{
+    var handlerObj = {};
+    handlerObj.func = handlerFunc;
+    if(config.settings.debug)
+    {
+        handlerObj.func = function(urlData, statusBoardCollection, response, postdata)
+        {
+            // TODO: central debug log call?
+            console.log('[DEBUG] HANDLER Called: ' + action);
+            handlerFunc(urlData, statusBoardCollection, response, postdata)
+        };
+    }
+    handlerObj.requireValidBoardId = util.getProperty(requireValidBoardId, false);
+    handlerObj.postDataFormat = util.getProperty(postDataFormat, 'utf8');
+    handlers[action] = handlerObj;
+}
+
 // TODO: just make this return a single object with all the functions mapped into it?
 exports.root = root;
 exports.sendUpdate = sendUpdate;
@@ -108,6 +132,8 @@ exports.getDataVersion = getDataVersion;
 exports.addBoard = addBoard;
 exports.addItem = addItem;
 exports.deleteItem = deleteItem;
+exports.moveItem = moveItem;
+exports.addHandlerConfig = addHandlerConfig;
 
 //////////
 // Support

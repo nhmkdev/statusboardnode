@@ -52,7 +52,7 @@ BrowserLayoutControl.prototype.processUpdate = function(updateData)
         var controlFunc = this.controlMap[item.t];
         if(typeof controlFunc !== 'undefined')
         {
-            htmlString += controlFunc(item);
+            htmlString += controlFunc(item, idx, len);
         }
         else
         {
@@ -62,10 +62,20 @@ BrowserLayoutControl.prototype.processUpdate = function(updateData)
     document.getElementById('statusdata').innerHTML = htmlString;
 }
 
-BrowserLayoutControl.prototype.addTextField = function(item)
+BrowserLayoutControl.prototype.addTextField = function(item, index, length)
 {
-    return '<input type="text" id="' + item.i + '" value="'+ item.v.t +'" onchange="pushUpdate(FieldBuilder.getTextField(' + item.i +'))"/>' +
-            '<input type="button" value="-" onclick="deleteItem(\'' + item.i + '\')"><br>';
+    var htmlData = '<input type="text" id="' + item.i + '" value="'+ item.v.t +'" onchange="pushUpdate(FieldBuilder.getTextField(\'' + item.i +'\'))"/>';
+    // TODO: this will look weird so attempt to improve upon the visual
+    if(index > 0)
+    {
+        htmlData = htmlData + '<input type="button" value="up" onclick="moveItem(\'' + item.i + '\', -1)">';
+    }
+    if(index < length - 1)
+    {
+        htmlData = htmlData + '<input type="button" value="down" onclick="moveItem(\'' + item.i + '\', 1)">';
+    }
+    htmlData = htmlData + '<input type="button" value="-" onclick="deleteItem(\'' + item.i + '\')"><br>';
+    return htmlData;
 }
 
 var layoutControl = new BrowserLayoutControl();
@@ -161,6 +171,17 @@ function deleteItem(id)
 {
     // TODO: hard coded text creation...
     ajaxPOSTRequest({action:'deleteitem', i:id},
+            function(response, code, xhr)
+            {
+                // TODO...
+                sendUpdate(true);
+            }
+    );
+}
+
+function moveItem(id, direction)
+{
+    ajaxPOSTRequest({action:'moveitem', i:id, d:direction},
             function(response, code, xhr)
             {
                 // TODO...
