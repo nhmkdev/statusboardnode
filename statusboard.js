@@ -1,3 +1,4 @@
+var config = require('./config');
 var util = require("./util");
 
 function StatusBoard()
@@ -31,25 +32,15 @@ StatusBoard.prototype.addItem = function(fieldType, value)
     this.incrementVersion();
 }
 
-StatusBoard.prototype.moveItem = function(id, direction)
+StatusBoard.prototype.moveItem = function(id, destination)
 {
-    // TODO: direction should only be -1 or 1
     var item = this.smap[id];
     if(typeof item !== 'undefined')
     {
         var itemIndex = this.s.indexOf(item);
-        var newPos = itemIndex + direction;
-        if(newPos > 0 || newPos < this.s.length)
-        {
-            // TODO: think on this some more... alternatives might be a lot of code (such as reassignements based on the direction)
-            this.s.splice(itemIndex, 1);
-            this.s.splice(newPos, 0, item);
-            this.incrementVersion();
-        }
-        else
-        {
-            // TODO: error
-        }
+        this.s.splice(itemIndex, 1);
+        this.s.splice(destination, 0, item);
+        this.incrementVersion();
     }
     else
     {
@@ -85,6 +76,10 @@ StatusBoard.prototype.updateItems = function(updatedItems)
         if(typeof targetObj !== 'undefined')
         {
             console.log('Updated data for field: ' + sourceObj.i);
+            if(config.settings.debug)
+            {
+                console.log('updateItems: OldValue:' + JSON.stringify(targetObj.v) + ' NewValue:' + JSON.stringify(sourceObj.v));
+            }
             targetObj.t = sourceObj.t;
             targetObj.v = sourceObj.v;
             this.incrementVersion();

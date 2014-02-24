@@ -1,8 +1,15 @@
 <html>
-<body>
 <!-- TODO: favicon -->
 <!-- Server populates the JQUERYSCRIPT with the contents specified in the config.js -->
 <!--JQUERYSCRIPT-->
+<!--JQUERYUISCRIPT-->
+<!--JQUERYUICSS-->
+<style>
+    /*ul { list-style-type: none; margin: 0; padding: 0; margin-bottom: 10px; }
+    li { margin: 5px; padding: 5px; width: 150px; }*/
+    #statusdata ul { list-style-type: none; margin: 0; padding: 0; margin-bottom: 10px; }
+    #statusdata li { margin: 5px; padding: 5px; width: 280px; }
+</style>
 <script>
 // TODO figure out how to share code between server and client
 
@@ -34,7 +41,8 @@ FieldBuilder.getTextObject = function(id, val)
 
 FieldBuilder.getTextField = function(id)
 {
-    return FieldBuilder.getTextObject(id, document.getElementById(id).value);
+    // TODO: the 'input' part needs to be a shared const or something...
+    return FieldBuilder.getTextObject(id, document.getElementById('input' + id).value);
 }
 
 function BrowserLayoutControl()
@@ -46,35 +54,63 @@ function BrowserLayoutControl()
 BrowserLayoutControl.prototype.processUpdate = function(updateData)
 {
     var htmlString = '';
+    htmlString += '<ul id="statusdatalist">';
     for(var idx = 0, len = updateData.s.length; idx < len; idx++)
     {
         var item = updateData.s[idx];
         var controlFunc = this.controlMap[item.t];
         if(typeof controlFunc !== 'undefined')
         {
-            htmlString += controlFunc(item, idx, len);
+            htmlString += '<li class="ui-state-default">' + controlFunc(item, idx, len) + '</li>';
+            //htmlString += '<li class="ui-state-default">' + 'test' + idx + '</li>';
         }
         else
         {
 
         }
     }
-    document.getElementById('statusdata').innerHTML = htmlString;
+    htmlString += '</ul>';
+    //document.getElementById('statusdata').innerHTML = htmlString;
+    $('#statusdata').html(htmlString);
+    // TODO: investigate all the options on sortable
+    $('#statusdatalist').sortable(
+        {
+            start: function(event, ui)
+            {
+                $(this).attr('data-previndex', ui.item.index());
+            },
+            update: function(event, ui)
+            {
+                var newIndex = ui.item.index();
+                var oldIndex = $(this).attr('data-previndex');
+                $(this).removeAttr('data-previndex');
+                console.log("New position: " + newIndex + ', Old Position:' + oldIndex);
+                // the first child is always a div with id matching the field
+                console.log("Info: " + ui.item.children().first().attr('id'));
+                if(newIndex != oldIndex)
+                {
+                    moveItem(ui.item.children().first().attr('id'), newIndex);
+                }
+            }
+        }
+    );
 }
 
 BrowserLayoutControl.prototype.addTextField = function(item, index, length)
 {
-    var htmlData = '<input type="text" id="' + item.i + '" value="'+ item.v.t +'" onchange="pushUpdate(FieldBuilder.getTextField(\'' + item.i +'\'))"/>';
+    // TODO: use jquery to build these instead of raw html
+    var htmlData = '<div id="' + item.i + '">';
+    htmlData += '<input type="text" id="input' + item.i + '" value="'+ item.v.t +'" onchange="pushUpdate(FieldBuilder.getTextField(\'' + item.i +'\'))"/>';
     // TODO: this will look weird so attempt to improve upon the visual
-    if(index > 0)
+    /*if(index > 0)
     {
-        htmlData = htmlData + '<input type="button" value="up" onclick="moveItem(\'' + item.i + '\', -1)">';
+        htmlData += '<input type="button" value="up" onclick="moveItem(\'' + item.i + '\', -1)">';
     }
     if(index < length - 1)
     {
-        htmlData = htmlData + '<input type="button" value="down" onclick="moveItem(\'' + item.i + '\', 1)">';
-    }
-    htmlData = htmlData + '<input type="button" value="-" onclick="deleteItem(\'' + item.i + '\')"><br>';
+        htmlData += '<input type="button" value="down" onclick="moveItem(\'' + item.i + '\', 1)">';
+    }*/
+    htmlData += '<input type="button" value="-" onclick="deleteItem(\'' + item.i + '\')"><br></div>';
     return htmlData;
 }
 
@@ -179,9 +215,9 @@ function deleteItem(id)
     );
 }
 
-function moveItem(id, direction)
+function moveItem(id, destination)
 {
-    ajaxPOSTRequest({action:'moveitem', i:id, d:direction},
+    ajaxPOSTRequest({action:'moveitem', i:id, d:destination},
             function(response, code, xhr)
             {
                 // TODO...
@@ -225,7 +261,9 @@ function ajaxPOSTRequest(data, success)
 
 sendUpdate(true);
 </script>
+<head>
 
+<body>
 StatusBoard
 <hr>
 <div id="statusdata"></div>

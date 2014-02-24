@@ -12,28 +12,55 @@ var fileCache = {}; // unlimited cache of files (not recommended for mammoth sit
 ///////////
 function root(urlData, statusBoardCollection, response)
 {
-	console.log("Request handler 'root' was called.");
-    var cached = fileCache[config.settings.indexfile];
+	console.log("Request handler 'root' was called. Pathname:" + urlData.pathname);
+    // TODO: async call...
+    var validFile = fs.existsSync('.' + urlData.pathname); //config.settings.validFiles[urlData.pathname];
+    var fileToGet = (validFile === true) ? urlData.pathname : config.settings.indexfile;
+    var cached = fileCache[fileToGet];
     if(typeof cached !== 'undefined')
     {
+        // TODO types are likely wrong
         respondWithContents(response, cached, 'text/html');
         //console.log('cache hit!');
     }
     else
     {
-        fs.readFile(config.settings.indexfile, {encoding:'utf8'}, function (indexFileErr, indexFileData)
+        // TODO: awful hahah
+        var gif = urlData.pathname.indexOf('.gif') != -1;
+        var png = urlData.pathname.indexOf('.png') != -1
+        if(gif || png)
         {
-            // TODO an actual error
-            if (indexFileErr) throw indexFileErr;
-            fs.readFile(config.settings.jqueryscript, {encoding:'utf8'}, function (jqueryFileErr, jqueryFileData)
+            // TODO: file types!!
+            fs.readFile('.' + fileToGet, function (fileErr, fileData)
             {
                 // TODO an actual error
-                if (jqueryFileErr) throw jqueryFileErr;
-                var combinedIndex = indexFileData.toString().replace('<!--JQUERYSCRIPT-->', '<script>' + jqueryFileData + '</script>')
-                fileCache[config.settings.indexfile] = combinedIndex;
-                respondWithContents(response, combinedIndex, 'text/html');
+                if (fileErr) throw fileErr;
+                fileCache[fileToGet] = fileData;
+                // terrible...
+                respondWithContents(response, fileData, 'image/' + (gif ? 'gif' : 'png'));
             });
-        });
+        }
+        else
+        {
+            // TODO: file types!!
+            fs.readFile('.' + fileToGet, {encoding:'utf8'}, function (fileErr, fileData)
+            {
+                // TODO an actual error
+                if (fileErr) throw fileErr;
+
+                // index file is actually modified before cache
+                if(!validFile)
+                {
+                    var combinedIndex = fileData.toString().replace('<!--JQUERYUICSS-->', '<link rel="stylesheet" href="' + config.settings.jqueryuicss + '">');
+                    combinedIndex = combinedIndex.replace('<!--JQUERYSCRIPT-->', '<script src="' + config.settings.jqueryscript + '"></script>');
+                    combinedIndex = combinedIndex.replace('<!--JQUERYUISCRIPT-->', '<script src="' + config.settings.jqueryuiscript + '"></script>');
+                    fileData = combinedIndex;
+                }
+
+                fileCache[fileToGet] = fileData;
+                respondWithContents(response, fileData, 'text/html');
+            });
+        }
     }
 }
 

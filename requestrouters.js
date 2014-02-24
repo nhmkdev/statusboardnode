@@ -32,8 +32,8 @@ function postrouter(request, urlData, actionFunc, errorFunc)
 
 function getrouter(request, urlData, actionFunc, errorFunc)
 {
-
     var actionId = urlData.query['action'];
+    // TODO: add in file detection
     if(typeof actionId === 'undefined')
     {
         actionId = '/';
