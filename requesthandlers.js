@@ -15,16 +15,15 @@ function root(urlData, statusBoardCollection, response)
 	console.log("Request handler 'root' was called. Pathname:" + urlData.pathname);
     var fileSettings = config.settings.validFiles[urlData.pathname];
     var fileToGet;
-    var isBoardRequest = false;
     if(util.defined(fileSettings))
     {
         fileToGet = urlData.pathname;
     }
     else
     {
+        // TODO: support other remapped files (if they are even needed...)
         fileToGet = config.settings.indexfile;
         fileSettings = config.settings.remappedFiles[fileToGet];
-        isBoardRequest = true;
     }
     var cached = fileCache[fileToGet];
     if(typeof cached !== 'undefined')
@@ -40,13 +39,10 @@ function root(urlData, statusBoardCollection, response)
             // TODO an actual error
             if (fileErr) throw fileErr;
 
-            // index file is actually modified before cached
-            if(isBoardRequest)
+            var postProcessFunc = config.settings.postProcessFileFuncs[fileToGet];
+            if(util.defined(postProcessFunc))
             {
-                var combinedIndex = fileData.toString().replace('<!--JQUERYUICSS-->', '<link rel="stylesheet" href="' + config.settings.jqueryuicss + '">');
-                combinedIndex = combinedIndex.replace('<!--JQUERYSCRIPT-->', '<script src="' + config.settings.jqueryscript + '"></script>');
-                combinedIndex = combinedIndex.replace('<!--JQUERYUISCRIPT-->', '<script src="' + config.settings.jqueryuiscript + '"></script>');
-                fileData = combinedIndex;
+                fileData = postProcessFunc(fileData);
             }
 
             fileCache[fileToGet] = fileData;

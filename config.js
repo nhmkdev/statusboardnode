@@ -9,7 +9,7 @@ exports.settings =
     jqueryuicss:'/jquery-ui-1.10.4.min.css',
     validFiles:{},
     remappedFiles:{},
-    extensionMap:{},
+    postProcessFileFuncs: {},
     // TODO: eventually break this into modes based on type of client (web vs. mobile vs. whatever)
     indexfile:'/index.html', // relative path to index.html file
     debug:true // flag for whether the log various things to the console
@@ -24,21 +24,31 @@ extensionMap['.gif'] = { type: 'image/gif', encoding:null };
 extensionMap['.html'] = { type: 'text/html', encoding:'utf8' };
 
 var validFiles = {};
-// NOTE: index.html is not a valid file because it is accessed when the user specifies a statusboard in the url
 addSupportedFile(exports.settings.jqueryscript, validFiles);
 addSupportedFile(exports.settings.jqueryuiscript, validFiles);
 addSupportedFile(exports.settings.jqueryuicss, validFiles);
 addSupportedFile('/images/ui-bg_glass_75_e6e6e6_1x400.png', validFiles);
 
 var remappedFiles = {};
-addSupportedFile(exports.settings.indexfile, remappedFiles);
+addSupportedFile(exports.settings.indexfile, remappedFiles,
+    function(fileData)
+    {
+        var combinedIndex = fileData.toString().replace('<!--JQUERYUICSS-->', '<link rel="stylesheet" href="' + exports.settings.jqueryuicss + '">');
+        combinedIndex = combinedIndex.replace('<!--JQUERYSCRIPT-->', '<script src="' + exports.settings.jqueryscript + '"></script>');
+        combinedIndex = combinedIndex.replace('<!--JQUERYUISCRIPT-->', '<script src="' + exports.settings.jqueryuiscript + '"></script>');
+        return combinedIndex;
+    });
 
-function addSupportedFile(filePath, fileSet)
+function addSupportedFile(filePath, fileSet, postProcessFunc)
 {
     var ext = path.extname(filePath);
     if(util.defined(extensionMap[ext]))
     {
         fileSet[filePath] = extensionMap[ext];
+        if(util.defined(postProcessFunc))
+        {
+            exports.settings.postProcessFileFuncs[filePath] = postProcessFunc;
+        }
     }
     else
     {
