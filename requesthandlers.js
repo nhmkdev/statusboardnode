@@ -13,54 +13,45 @@ var fileCache = {}; // unlimited cache of files (not recommended for mammoth sit
 function root(urlData, statusBoardCollection, response)
 {
 	console.log("Request handler 'root' was called. Pathname:" + urlData.pathname);
-    // TODO: async call...
-    var validFile = fs.existsSync('.' + urlData.pathname); //config.settings.validFiles[urlData.pathname];
-    var fileToGet = (validFile === true) ? urlData.pathname : config.settings.indexfile;
+    var fileSettings = config.settings.validFiles[urlData.pathname];
+    var fileToGet;
+    var isBoardRequest = false;
+    if(util.defined(fileSettings))
+    {
+        fileToGet = urlData.pathname;
+    }
+    else
+    {
+        fileToGet = config.settings.indexfile;
+        fileSettings = config.settings.remappedFiles[fileToGet];
+        isBoardRequest = true;
+    }
     var cached = fileCache[fileToGet];
     if(typeof cached !== 'undefined')
     {
         // TODO types are likely wrong
-        respondWithContents(response, cached, 'text/html');
+        respondWithContents(response, cached, fileSettings.type);
         //console.log('cache hit!');
     }
     else
     {
-        // TODO: awful hahah
-        var gif = urlData.pathname.indexOf('.gif') != -1;
-        var png = urlData.pathname.indexOf('.png') != -1
-        if(gif || png)
+        fs.readFile('.' + fileToGet, {encoding:fileSettings.encoding}, function (fileErr, fileData)
         {
-            // TODO: file types!!
-            fs.readFile('.' + fileToGet, function (fileErr, fileData)
-            {
-                // TODO an actual error
-                if (fileErr) throw fileErr;
-                fileCache[fileToGet] = fileData;
-                // terrible...
-                respondWithContents(response, fileData, 'image/' + (gif ? 'gif' : 'png'));
-            });
-        }
-        else
-        {
-            // TODO: file types!!
-            fs.readFile('.' + fileToGet, {encoding:'utf8'}, function (fileErr, fileData)
-            {
-                // TODO an actual error
-                if (fileErr) throw fileErr;
+            // TODO an actual error
+            if (fileErr) throw fileErr;
 
-                // index file is actually modified before cache
-                if(!validFile)
-                {
-                    var combinedIndex = fileData.toString().replace('<!--JQUERYUICSS-->', '<link rel="stylesheet" href="' + config.settings.jqueryuicss + '">');
-                    combinedIndex = combinedIndex.replace('<!--JQUERYSCRIPT-->', '<script src="' + config.settings.jqueryscript + '"></script>');
-                    combinedIndex = combinedIndex.replace('<!--JQUERYUISCRIPT-->', '<script src="' + config.settings.jqueryuiscript + '"></script>');
-                    fileData = combinedIndex;
-                }
+            // index file is actually modified before cached
+            if(isBoardRequest)
+            {
+                var combinedIndex = fileData.toString().replace('<!--JQUERYUICSS-->', '<link rel="stylesheet" href="' + config.settings.jqueryuicss + '">');
+                combinedIndex = combinedIndex.replace('<!--JQUERYSCRIPT-->', '<script src="' + config.settings.jqueryscript + '"></script>');
+                combinedIndex = combinedIndex.replace('<!--JQUERYUISCRIPT-->', '<script src="' + config.settings.jqueryuiscript + '"></script>');
+                fileData = combinedIndex;
+            }
 
-                fileCache[fileToGet] = fileData;
-                respondWithContents(response, fileData, 'text/html');
-            });
-        }
+            fileCache[fileToGet] = fileData;
+            respondWithContents(response, fileData, fileSettings.type);
+        });
     }
 }
 
@@ -68,9 +59,18 @@ function root(urlData, statusBoardCollection, response)
 
 function sendUpdate(urlData, statusBoardCollection, response)
 {
-    var data = statusBoardCollection[urlData.pathname].getBoardAsJSON();
-    console.log('Sending: ' + data);
-    respondWithContents(response, data);
+    var data = statusBoardCollection[urlData.pathname];
+    if(util.defined(data))
+    {
+        var jsonData = data.getBoardAsJSON();
+        console.log('Sending: ' + jsonData);
+        respondWithContents(response, jsonData);
+    }
+    else
+    {
+        // TODO: return proper error
+        return404();
+    }
 }
 
 function getDataVersion(urlData, statusBoardCollection, response)
@@ -168,13 +168,22 @@ exports.addHandlerConfig = addHandlerConfig;
 
 function respondWithContents(response, data, contenttype)
 {
-
-    contenttype = util.getProperty(contenttype, 'text/plan');
-    //response.writeHead(200, {"Content-Type": "text/plain"});
+    // TODO: make this method accept an object with properties instead of params (so return404 could just use it)
+    contenttype = util.getProperty(contenttype, 'text/plain');
     response.writeHead(200, {"Content-Type": contenttype});
     if(typeof data !== 'undefined')
     {
         response.write(data);
     }
+    response.end();
+}
+
+function return404(response)
+{
+    response.writeHead(404,
+    {
+        "Content-Type": "text/plain"
+    });
+    response.write("404 Not Found\n");
     response.end();
 }
