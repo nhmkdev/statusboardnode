@@ -22,6 +22,10 @@ ClientLayoutController.prototype.processUpdate = function()
     var that = this;
     var updateData = this.statusContainer.statusBoardData;
     var statusItemList = $(document.createElement('ul'));
+    statusItemList.attr(
+        {
+            id:'statusdatalist'
+        });
     for(var idx = 0, len = updateData.s.length; idx < len; idx++)
     {
         var item = updateData.s[idx];
@@ -29,10 +33,7 @@ ClientLayoutController.prototype.processUpdate = function()
         if(typeof controlFunc !== 'undefined')
         {
             var listItem = $(document.createElement('li'));
-            listItem.attr(
-                {
-                    className:'ui-state-default'
-                });
+            listItem.addClass('ui-state-default');
             var $divItem = $(document.createElement('div'));
             $divItem.attr(
                 {
@@ -76,7 +77,7 @@ ClientLayoutController.prototype.processUpdate = function()
                 console.log("Info: " + ui.item.children().first().attr('id'));
                 if(newIndex != oldIndex)
                 {
-                    moveItem(ui.item.children().first().attr('id'), newIndex);
+                    that.communicator.moveItem(ui.item.children().first().attr('id'), newIndex);
                 }
             }
         }
