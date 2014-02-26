@@ -4,6 +4,7 @@
 <!--JQUERYSCRIPT-->
 <!--JQUERYUISCRIPT-->
 <!--JQUERYUICSS-->
+<!--UTILSCRIPT-->
 <style>
     /*ul { list-style-type: none; margin: 0; padding: 0; margin-bottom: 10px; }
     li { margin: 5px; padding: 5px; width: 150px; }*/
@@ -11,7 +12,7 @@
     #statusdata li { margin: 5px; padding: 5px; width: 280px; }
 </style>
 <script>
-// TODO figure out how to share code between server and client
+// TODO: break things out into scripts so the html isn't so loaded with junk (/client, /shared, /server folders?)
 
 var updateRequester = null;
 var updatePending = false;
@@ -25,30 +26,28 @@ var statusBoardData = null;
 
 var FieldBuilder = {};
 
-FieldBuilder.getTextObject = function(id, val)
+FieldBuilder.getItemValue = function(id, item)
 {
-    var obj =
-    {
-        i:id,
-        t:'text',
-        v:
-        {
-            t:val
-        }
-    };
+    var obj = statusBoardData.smap[id];
+    obj.v.t = item.value;
     return obj;
 }
 
-FieldBuilder.getTextField = function(id)
+FieldBuilder.getCheckboxItemValue = function(id, checkbox)
 {
-    // TODO: the 'input' part needs to be a shared const or something...
-    return FieldBuilder.getTextObject(id, document.getElementById('input' + id).value);
+    var obj = statusBoardData.smap[id];
+    obj.v.t = checkbox.checked ? '1' : '0';
+    return obj;
 }
 
 function BrowserLayoutControl()
 {
     this.controlMap = {};
-    this.controlMap['text'] = this.addTextField;
+    // TODO: rename from field to item...
+    this.controlMap['text'] = this.addTextItem;
+    this.controlMap['radio'] = this.addRadioItem;
+    this.controlMap['checkbox'] = this.addCheckboxItem;
+    this.controlMap['select'] = this.addSelectItem;
 }
 
 BrowserLayoutControl.prototype.processUpdate = function(updateData)
@@ -61,8 +60,10 @@ BrowserLayoutControl.prototype.processUpdate = function(updateData)
         var controlFunc = this.controlMap[item.t];
         if(typeof controlFunc !== 'undefined')
         {
-            htmlString += '<li class="ui-state-default">' + controlFunc(item, idx, len) + '</li>';
-            //htmlString += '<li class="ui-state-default">' + 'test' + idx + '</li>';
+            htmlString += '<li class="ui-state-default">' +
+                    '<div id="' + item.i + '">' +
+                    controlFunc(item) +
+                    '<input type="button" value="-" onclick="deleteItem(\'' + item.i + '\')"><br></div></li>';
         }
         else
         {
@@ -70,7 +71,6 @@ BrowserLayoutControl.prototype.processUpdate = function(updateData)
         }
     }
     htmlString += '</ul>';
-    //document.getElementById('statusdata').innerHTML = htmlString;
     $('#statusdata').html(htmlString);
     // TODO: investigate all the options on sortable
     $('#statusdatalist').sortable(
@@ -96,21 +96,47 @@ BrowserLayoutControl.prototype.processUpdate = function(updateData)
     );
 }
 
-BrowserLayoutControl.prototype.addTextField = function(item, index, length)
+BrowserLayoutControl.prototype.addTextItem = function(item)
+{
+    return '<input type="text" id="input' + item.i + '" value="'+ item.v.t +'" onchange="pushUpdate(FieldBuilder.getItemValue(\'' + item.i +'\'))"/>';
+}
+
+BrowserLayoutControl.prototype.addRadioItem = function(item)
+{
+    var htmlData = '<form id="form' + item.i + '">\n';
+    for(var idx = 0, len = item.v.o.length; idx < len; idx++)
+    {
+        var subItem = item.v.o[idx];
+        var checked = subItem === item.v.t;
+        var lineSplitOptions = getProperty(item.v['so'], true);
+        htmlData += '<input type="radio" name="option' + item.i + '" value="' + subItem + '" ' +
+                'onchange="pushUpdate(FieldBuilder.getItemValue(\'' + item.i + '\', this))" ' +
+                (checked ? 'checked' : '') + '>' + subItem + '</input>' +
+                (lineSplitOptions ? '<br>' : '');
+    }
+    htmlData += '</form>';
+    return htmlData;
+}
+
+BrowserLayoutControl.prototype.addCheckboxItem = function(item)
 {
     // TODO: use jquery to build these instead of raw html
-    var htmlData = '<div id="' + item.i + '">';
-    htmlData += '<input type="text" id="input' + item.i + '" value="'+ item.v.t +'" onchange="pushUpdate(FieldBuilder.getTextField(\'' + item.i +'\'))"/>';
-    // TODO: this will look weird so attempt to improve upon the visual
-    /*if(index > 0)
+    return '<input type="checkbox" id="input' + item.i + '" onchange="pushUpdate(FieldBuilder.getCheckboxItemValue(\'' + item.i +'\', this))" ' +
+            (item.v.t === '1' ? 'checked' : '') + '>(TODO)</input>';
+}
+
+BrowserLayoutControl.prototype.addSelectItem = function(item)
+{
+    var htmlData = '<select id="select' + item.i + '" onchange="pushUpdate(FieldBuilder.getItemValue(\'' + item.i + '\', this))">\n';
+    for(var idx = 0, len = item.v.o.length; idx < len; idx++)
     {
-        htmlData += '<input type="button" value="up" onclick="moveItem(\'' + item.i + '\', -1)">';
+        var subItem = item.v.o[idx];
+        var selected = subItem === item.v.t;
+        htmlData += '<option value="' + subItem + '" ' +
+                (selected ? 'selected' : '') +
+                '>' + subItem + '</option>\n';
     }
-    if(index < length - 1)
-    {
-        htmlData += '<input type="button" value="down" onclick="moveItem(\'' + item.i + '\', 1)">';
-    }*/
-    htmlData += '<input type="button" value="-" onclick="deleteItem(\'' + item.i + '\')"><br></div>';
+    htmlData += '</select>';
     return htmlData;
 }
 
@@ -161,6 +187,7 @@ function sendUpdate(forceUpdate)
                     console.log('x:' + response);
                     // TODO: rethink the storage of this on the client (how and where)
                     statusBoardData = JSON.parse(response);
+                    statusBoardData.smap = createArrayToObjectMap(statusBoardData.s, 'i');
                     layoutControl.processUpdate(statusBoardData);
                 }
                 catch (e)
@@ -191,10 +218,10 @@ function pushUpdate(updateData)
     );
 }
 
-function addItem()
+function addItem(type)
 {
     // TODO: hard coded text creation...
-    ajaxPOSTRequest({action:'additem', v: { t:'new item' }},
+    ajaxPOSTRequest({action:'additem', t:type, v: { t:'new item' }},
         function(response, code, xhr)
         {
             // TODO...
@@ -259,6 +286,7 @@ function ajaxPOSTRequest(data, success)
 // TODO: consider long polling instead of periodic polling
 // AJAX Abort http://stackoverflow.com/questions/446594/abort-ajax-requests-using-jquery
 
+// initial call to update
 sendUpdate(true);
 </script>
 <head>
@@ -270,7 +298,10 @@ StatusBoard
 <hr>
 <div id="controls">
     <input type="text" id="newitemtext" value="New Item"/>
-    <input type="button" value="+" onclick="addItem()">
+    <input type="button" value="Text+" onclick="addItem('text')">
+    <input type="button" value="Checkbox+" onclick="addItem('checkbox')">
+    <input type="button" value="Radio+" onclick="addItem('radio')">
+    <input type="button" value="Select+" onclick="addItem('select')">
 </div>
 </body>
 </html>

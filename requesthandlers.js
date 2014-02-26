@@ -98,7 +98,7 @@ function pushItemUpdate(urlData, statusBoardCollection, response, postData)
 function addItem(urlData, statusBoardCollection, response, postdata)
 {
     var statusBoard = statusBoardCollection[urlData.pathname];
-    statusBoard.addItem('text', postdata.v);
+    statusBoard.addItem(postdata.t, postdata.v);
     respondWithContents(response);
 }
 

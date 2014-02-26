@@ -7,6 +7,7 @@ exports.settings =
     jqueryscript:'/jquery-2.1.0.min.js', // relative path to the jquery script you want to use
     jqueryuiscript:'/jquery-ui-1.10.4.min.js',
     jqueryuicss:'/jquery-ui-1.10.4.min.css',
+    utilscript:'/util.js',
     validFiles:{},
     remappedFiles:{},
     postProcessFileFuncs: {},
@@ -27,6 +28,7 @@ var validFiles = {};
 addSupportedFile(exports.settings.jqueryscript, validFiles);
 addSupportedFile(exports.settings.jqueryuiscript, validFiles);
 addSupportedFile(exports.settings.jqueryuicss, validFiles);
+addSupportedFile(exports.settings.utilscript, validFiles);
 addSupportedFile('/images/ui-bg_glass_75_e6e6e6_1x400.png', validFiles);
 
 var remappedFiles = {};
@@ -36,6 +38,7 @@ addSupportedFile(exports.settings.indexfile, remappedFiles,
         var combinedIndex = fileData.toString().replace('<!--JQUERYUICSS-->', '<link rel="stylesheet" href="' + exports.settings.jqueryuicss + '">');
         combinedIndex = combinedIndex.replace('<!--JQUERYSCRIPT-->', '<script src="' + exports.settings.jqueryscript + '"></script>');
         combinedIndex = combinedIndex.replace('<!--JQUERYUISCRIPT-->', '<script src="' + exports.settings.jqueryuiscript + '"></script>');
+        combinedIndex = combinedIndex.replace('<!--UTILSCRIPT-->', '<script src="' + exports.settings.utilscript + '"></script>');
         return combinedIndex;
     });
 

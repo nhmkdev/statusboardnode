@@ -79,9 +79,14 @@ function createArrayToObjectMap(arr, prop, obj)
     return obj;
 }
 
-exports.hasAllProperties = hasAllProperties;
-exports.getProperty = getProperty;
-exports.defined = defined;
-exports.isFunction = isFunction;
-exports.isArray = isArray;
-exports.createArrayToObjectMap = createArrayToObjectMap;
+// node.js detection - could be cheated around but web development is an unending warzone of arguments...
+// how can anyone get anything done if every line is argued?
+if (typeof module !== 'undefined' && typeof module.exports !== 'undefined')
+{
+    exports.hasAllProperties = hasAllProperties;
+    exports.getProperty = getProperty;
+    exports.defined = defined;
+    exports.isFunction = isFunction;
+    exports.isArray = isArray;
+    exports.createArrayToObjectMap = createArrayToObjectMap;
+}

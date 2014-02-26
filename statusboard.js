@@ -21,6 +21,17 @@ StatusBoard.prototype.getNextItemId = function()
 
 StatusBoard.prototype.addItem = function(fieldType, value)
 {
+    // TODO: value validation so people don't send up a bunch of random crap into a board
+    if(fieldType === 'radio' || fieldType === 'select')
+    {
+        value.o =
+            [
+                'new item',
+                'another',
+                'testx'
+            ];
+    }
+
     var newItem =
     {
         i:this.getNextItemId(),
