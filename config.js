@@ -8,6 +8,8 @@ exports.settings =
     jqueryuiscript:'/jquery-ui-1.10.4.min.js',
     jqueryuicss:'/jquery-ui-1.10.4.min.css',
     utilscript:'/util.js',
+    clientcommunicatorscript:'/clientcommunicator.js',
+    clientlayoutcontrollerscript:'/clientlayoutcontroller.js',
     validFiles:{},
     remappedFiles:{},
     postProcessFileFuncs: {},
@@ -17,8 +19,8 @@ exports.settings =
 };
 
 var extensionMap = {};
-extensionMap['.js'] = { type: 'text/script', encoding:'utf8' };
-extensionMap['.css'] = { type: 'text/script', encoding:'utf8' };
+extensionMap['.js'] = { type: 'text/javascript', encoding:'utf8' };
+extensionMap['.css'] = { type: 'text/css', encoding:'utf8' };
 extensionMap['.png'] = { type: 'image/png', encoding: null };
 extensionMap['.jpg'] = { type: 'image/jpeg', encoding:null };
 extensionMap['.gif'] = { type: 'image/gif', encoding:null };
@@ -29,6 +31,8 @@ addSupportedFile(exports.settings.jqueryscript, validFiles);
 addSupportedFile(exports.settings.jqueryuiscript, validFiles);
 addSupportedFile(exports.settings.jqueryuicss, validFiles);
 addSupportedFile(exports.settings.utilscript, validFiles);
+addSupportedFile(exports.settings.clientcommunicatorscript, validFiles);
+addSupportedFile(exports.settings.clientlayoutcontrollerscript, validFiles);
 addSupportedFile('/images/ui-bg_glass_75_e6e6e6_1x400.png', validFiles);
 
 var remappedFiles = {};
@@ -39,6 +43,8 @@ addSupportedFile(exports.settings.indexfile, remappedFiles,
         combinedIndex = combinedIndex.replace('<!--JQUERYSCRIPT-->', '<script src="' + exports.settings.jqueryscript + '"></script>');
         combinedIndex = combinedIndex.replace('<!--JQUERYUISCRIPT-->', '<script src="' + exports.settings.jqueryuiscript + '"></script>');
         combinedIndex = combinedIndex.replace('<!--UTILSCRIPT-->', '<script src="' + exports.settings.utilscript + '"></script>');
+        combinedIndex = combinedIndex.replace('<!--CLIENTCOMMSCRIPT-->', '<script src="' + exports.settings.clientcommunicatorscript + '"></script>');
+        combinedIndex = combinedIndex.replace('<!--CLIENTLAYOUTCRIPT-->', '<script src="' + exports.settings.clientlayoutcontrollerscript + '"></script>');
         return combinedIndex;
     });
 

@@ -5,289 +5,33 @@
 <!--JQUERYUISCRIPT-->
 <!--JQUERYUICSS-->
 <!--UTILSCRIPT-->
+<!--CLIENTCOMMSCRIPT-->
+<!--CLIENTLAYOUTCRIPT-->
 <style>
-    /*ul { list-style-type: none; margin: 0; padding: 0; margin-bottom: 10px; }
-    li { margin: 5px; padding: 5px; width: 150px; }*/
     #statusdata ul { list-style-type: none; margin: 0; padding: 0; margin-bottom: 10px; }
     #statusdata li { margin: 5px; padding: 5px; width: 280px; }
 </style>
 <script>
-// TODO: break things out into scripts so the html isn't so loaded with junk (/client, /shared, /server folders?)
 
-var updateRequester = null;
-var updatePending = false;
-// TODO: move all this to another script file
-
-var boardId = window.location.pathname.replace('/', '').replace('/', '');
-
-console.log('pathname:' + boardId);
-
-var statusBoardData = null;
-
-var FieldBuilder = {};
-
-FieldBuilder.getItemValue = function(id, item)
+var statusContainer =
 {
-    var obj = statusBoardData.smap[id];
-    obj.v.t = item.value;
-    return obj;
+    statusBoardData:{}
 }
 
-FieldBuilder.getCheckboxItemValue = function(id, checkbox)
-{
-    var obj = statusBoardData.smap[id];
-    obj.v.t = checkbox.checked ? '1' : '0';
-    return obj;
-}
+var clientLayoutController = new ClientLayoutController(statusContainer);
+var clientCommunicator = new ClientCommunicator(statusContainer);
 
-function BrowserLayoutControl()
-{
-    this.controlMap = {};
-    // TODO: rename from field to item...
-    this.controlMap['text'] = this.addTextItem;
-    this.controlMap['radio'] = this.addRadioItem;
-    this.controlMap['checkbox'] = this.addCheckboxItem;
-    this.controlMap['select'] = this.addSelectItem;
-}
+clientCommunicator.setLayoutController(clientLayoutController);
+clientLayoutController.setCommunicator(clientCommunicator);
 
-BrowserLayoutControl.prototype.processUpdate = function(updateData)
-{
-    var htmlString = '';
-    htmlString += '<ul id="statusdatalist">';
-    for(var idx = 0, len = updateData.s.length; idx < len; idx++)
-    {
-        var item = updateData.s[idx];
-        var controlFunc = this.controlMap[item.t];
-        if(typeof controlFunc !== 'undefined')
-        {
-            htmlString += '<li class="ui-state-default">' +
-                    '<div id="' + item.i + '">' +
-                    controlFunc(item) +
-                    '<input type="button" value="-" onclick="deleteItem(\'' + item.i + '\')"><br></div></li>';
-        }
-        else
-        {
-
-        }
-    }
-    htmlString += '</ul>';
-    $('#statusdata').html(htmlString);
-    // TODO: investigate all the options on sortable
-    $('#statusdatalist').sortable(
-        {
-            start: function(event, ui)
-            {
-                $(this).attr('data-previndex', ui.item.index());
-            },
-            update: function(event, ui)
-            {
-                var newIndex = ui.item.index();
-                var oldIndex = $(this).attr('data-previndex');
-                $(this).removeAttr('data-previndex');
-                console.log("New position: " + newIndex + ', Old Position:' + oldIndex);
-                // the first child is always a div with id matching the field
-                console.log("Info: " + ui.item.children().first().attr('id'));
-                if(newIndex != oldIndex)
-                {
-                    moveItem(ui.item.children().first().attr('id'), newIndex);
-                }
-            }
-        }
-    );
-}
-
-BrowserLayoutControl.prototype.addTextItem = function(item)
-{
-    return '<input type="text" id="input' + item.i + '" value="'+ item.v.t +'" onchange="pushUpdate(FieldBuilder.getItemValue(\'' + item.i +'\'))"/>';
-}
-
-BrowserLayoutControl.prototype.addRadioItem = function(item)
-{
-    var htmlData = '<form id="form' + item.i + '">\n';
-    for(var idx = 0, len = item.v.o.length; idx < len; idx++)
-    {
-        var subItem = item.v.o[idx];
-        var checked = subItem === item.v.t;
-        var lineSplitOptions = getProperty(item.v['so'], true);
-        htmlData += '<input type="radio" name="option' + item.i + '" value="' + subItem + '" ' +
-                'onchange="pushUpdate(FieldBuilder.getItemValue(\'' + item.i + '\', this))" ' +
-                (checked ? 'checked' : '') + '>' + subItem + '</input>' +
-                (lineSplitOptions ? '<br>' : '');
-    }
-    htmlData += '</form>';
-    return htmlData;
-}
-
-BrowserLayoutControl.prototype.addCheckboxItem = function(item)
-{
-    // TODO: use jquery to build these instead of raw html
-    return '<input type="checkbox" id="input' + item.i + '" onchange="pushUpdate(FieldBuilder.getCheckboxItemValue(\'' + item.i +'\', this))" ' +
-            (item.v.t === '1' ? 'checked' : '') + '>(TODO)</input>';
-}
-
-BrowserLayoutControl.prototype.addSelectItem = function(item)
-{
-    var htmlData = '<select id="select' + item.i + '" onchange="pushUpdate(FieldBuilder.getItemValue(\'' + item.i + '\', this))">\n';
-    for(var idx = 0, len = item.v.o.length; idx < len; idx++)
-    {
-        var subItem = item.v.o[idx];
-        var selected = subItem === item.v.t;
-        htmlData += '<option value="' + subItem + '" ' +
-                (selected ? 'selected' : '') +
-                '>' + subItem + '</option>\n';
-    }
-    htmlData += '</select>';
-    return htmlData;
-}
-
-var layoutControl = new BrowserLayoutControl();
-
-function sendUpdate(forceUpdate)
-{
-    if(updatePending)
-    {
-        return;
-    }
-    
-    updatePending = true;
-    if(updateRequester != null)
-    {
-        clearTimeout(updateRequester);
-    }
-
-    if(!forceUpdate)
-    {
-        ajaxGETRequest({action:'getdataversion'},
-            function(response, code, xhr)
-            {
-                updatePending = false;
-                if(statusBoardData.v != response)
-                {
-                    // mismatched version, request full update
-                    console.log('data version mismatch forcing update');
-                    sendUpdate(true);
-                }
-                else
-                {
-                    console.log('data is up to date waiting...');
-                    updateRequester = setTimeout(function() { sendUpdate(); }, 5000);
-                }
-            }
-        );
-    }
-    else
-    {
-        ajaxGETRequest({action:'sendupdate'},
-            function(response, code, xhr)
-            {
-                // TODO: this is a HAAAAACK and requires a bit more thought
-                updatePending = false;
-                try
-                {
-                    console.log('x:' + response);
-                    // TODO: rethink the storage of this on the client (how and where)
-                    statusBoardData = JSON.parse(response);
-                    statusBoardData.smap = createArrayToObjectMap(statusBoardData.s, 'i');
-                    layoutControl.processUpdate(statusBoardData);
-                }
-                catch (e)
-                {
-                    console.error("Parsing error:", e);
-                }
-                updateRequester = setTimeout(function() { sendUpdate(); }, 5000);
-            }
-        );
-    }
-}
-
-function pushUpdate(updateData)
-{
-    // TODO: maintain a client side copy of the status board object to simplify this...
-    var obj = {};
-    obj.s =
-    [
-        updateData
-    ];
-
-    ajaxPOSTRequest({ action:'pushitemupdate', data:obj},
-        function(response, code, xhr)
-        {
-            // TODO...
-            sendUpdate(true);
-        }
-    );
-}
-
-function addItem(type)
-{
-    // TODO: hard coded text creation...
-    ajaxPOSTRequest({action:'additem', t:type, v: { t:'new item' }},
-        function(response, code, xhr)
-        {
-            // TODO...
-            sendUpdate(true);
-        }
-    );
-}
-
-function deleteItem(id)
-{
-    // TODO: hard coded text creation...
-    ajaxPOSTRequest({action:'deleteitem', i:id},
-            function(response, code, xhr)
-            {
-                // TODO...
-                sendUpdate(true);
-            }
-    );
-}
-
-function moveItem(id, destination)
-{
-    ajaxPOSTRequest({action:'moveitem', i:id, d:destination},
-            function(response, code, xhr)
-            {
-                // TODO...
-                sendUpdate(true);
-            }
-    );
-}
-
-function ajaxGETRequest(data, success)
-{
-    $.ajax(
-    {
-        cache : false,
-        // setup the server address
-        type: 'GET',
-        processData: true,
-        url : window.location,
-        data: data,
-        success : success
-    }
-    );
-}
-
-function ajaxPOSTRequest(data, success)
-{
-    $.ajax(
-    {
-        cache : false,
-        // setup the server address
-        type: 'POST',
-        processData: false,
-        url : window.location,
-        data: JSON.stringify(data),
-        success : success
-    }
-    );
-}
+// initial call to update
+clientCommunicator.sendUpdate(true);
 
 // TODO: consider long polling instead of periodic polling
 // AJAX Abort http://stackoverflow.com/questions/446594/abort-ajax-requests-using-jquery
 
-// initial call to update
-sendUpdate(true);
+// TODO: the controls for adding items should be up top with divs that expand to allow for custom fields (also the onclick is meh?)
+
 </script>
 <head>
 
@@ -298,10 +42,10 @@ StatusBoard
 <hr>
 <div id="controls">
     <input type="text" id="newitemtext" value="New Item"/>
-    <input type="button" value="Text+" onclick="addItem('text')">
-    <input type="button" value="Checkbox+" onclick="addItem('checkbox')">
-    <input type="button" value="Radio+" onclick="addItem('radio')">
-    <input type="button" value="Select+" onclick="addItem('select')">
+    <input type="button" value="Text+" onclick="clientCommunicator.addItem('text')">
+    <input type="button" value="Checkbox+" onclick="clientCommunicator.addItem('checkbox')">
+    <input type="button" value="Radio+" onclick="clientCommunicator.addItem('radio')">
+    <input type="button" value="Select+" onclick="clientCommunicator.addItem('select')">
 </div>
 </body>
 </html>
