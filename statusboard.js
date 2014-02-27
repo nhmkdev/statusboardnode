@@ -19,23 +19,15 @@ StatusBoard.prototype.getNextItemId = function()
     return 'i' + this.i++;
 }
 
-StatusBoard.prototype.addItem = function(fieldType, value)
+StatusBoard.prototype.addItem = function(fieldType, description, value)
 {
     // TODO: value validation so people don't send up a bunch of random crap into a board
-    if(fieldType === 'radio' || fieldType === 'select')
-    {
-        value.o =
-            [
-                'new item',
-                'another',
-                'testx'
-            ];
-    }
 
     var newItem =
     {
         i:this.getNextItemId(),
         t:fieldType,
+        d:description,
         v:value
     }
     this.s.push(newItem);
@@ -91,7 +83,8 @@ StatusBoard.prototype.updateItems = function(updatedItems)
             {
                 console.log('updateItems: OldValue:' + JSON.stringify(targetObj.v) + ' NewValue:' + JSON.stringify(sourceObj.v));
             }
-            targetObj.t = sourceObj.t;
+            // TODO: any need for allowing type to change?
+            //targetObj.t = sourceObj.t;
             targetObj.v = sourceObj.v;
             this.incrementVersion();
         }

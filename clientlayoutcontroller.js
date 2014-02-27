@@ -6,12 +6,236 @@ function ClientLayoutController(statusContainer)
     this.controlMap['radio'] = this.addRadioItem;
     this.controlMap['checkbox'] = this.addCheckboxItem;
     this.controlMap['select'] = this.addSelectItem;
+
+    this.itemConfigControls =
+    {
+        $descriptionBox:this.createElement('input',
+            {
+                type:'text'
+            }),
+        $textBox:this.createElement('input',
+            {
+                type:'text'
+            }),
+        $textArea:this.createElement('textarea',
+            {
+                rows:'4',
+                cols:'50'
+            })
+    }
+
+    var that = this;
+
+    // TODO: consider just making complete separate objects out of these?
+    // TODO: might be able to minimize the code duplication if the createItem returns the "value" object
+    this.itemTypeConfig =
+        [
+            {
+                text:'Text',
+                type:'text',
+                enabledControls:
+                    [
+                        that.itemConfigControls.$descriptionBox,
+                        that.itemConfigControls.$textBox
+                    ],
+                createItem:function()
+                {
+                    that.communicator.addItem('text', that.itemConfigControls.$descriptionBox.val(), { t: that.itemConfigControls.$textBox.val() });
+                }
+            },
+            {
+                text:'Radio Button Set',
+                type:'radio',
+                enabledControls:
+                    [
+                        that.itemConfigControls.$descriptionBox,
+                        that.itemConfigControls.$textArea
+                    ],
+                createItem:function()
+                {
+                    var options = that.itemConfigControls.$textArea.val().split('\n');
+                    that.communicator.addItem('radio',
+                        that.itemConfigControls.$descriptionBox.val(),
+                        {
+                            t: options[0],
+                            o: options
+                        });
+                }
+            },
+            {
+                text:'CheckBox',
+                type:'checkbox',
+                enabledControls:
+                    [
+                        that.itemConfigControls.$descriptionBox,
+                        that.itemConfigControls.$textArea
+                    ],
+                createItem:function()
+                {
+                    var optionText = that.itemConfigControls.$textArea.val();
+                    var options = optionText.split('\n');
+                    if(options.length != 2)
+                    {
+                        // TODO: error to user?
+                        options = ['False', 'True'];
+                    }
+                    that.communicator.addItem('checkbox',
+                        that.itemConfigControls.$descriptionBox.val(),
+                        {
+                            t: options[0],
+                            o: options
+                        });
+                }
+            },
+            {
+                text:'Selector',
+                type:'select',
+                enabledControls:
+                    [
+                        that.itemConfigControls.$descriptionBox,
+                        that.itemConfigControls.$textArea
+                    ],
+                createItem:function()
+                {
+                    var options = that.itemConfigControls.$textArea.val().split('\n');
+                    that.communicator.addItem('select',
+                        that.itemConfigControls.$descriptionBox.val(),
+                        {
+                            t: options[0],
+                            o: options
+                        });
+                }
+            }
+        ];
+    this.itemTypeConfigMap = createArrayToObjectMap(this.itemTypeConfig, 'type');
+
 }
 // TODO: jquery vars should start with $
 
 ClientLayoutController.prototype.setCommunicator = function(communicator)
 {
     this.communicator = communicator;
+}
+
+ClientLayoutController.prototype.createElement = function(elementType, attr, $appendToObj)
+{
+    var $element = $(document.createElement(elementType));
+    if(getProperty(attr, null) != null)
+    {
+        $element.attr(attr);
+    }
+    if(getProperty($appendToObj, null) != null)
+    {
+        $appendToObj.append($element);
+    }
+    return $element;
+}
+
+function getRadioChangeFunc(layoutController, item)
+{
+    return function()
+    {
+        console.log('changed');
+        // toggle all controls to disabled
+        for(var itemName in layoutController.itemConfigControls)
+        {
+            if(layoutController.itemConfigControls.hasOwnProperty(itemName))
+            {
+                layoutController.itemConfigControls[itemName].prop('disabled', true);
+            }
+        }
+        // toggle on the required controls
+        for(var i = 0, controlsLen = item.enabledControls.length; i < controlsLen; i++)
+        {
+            item.enabledControls[i].prop("disabled", false);
+        }
+    };
+}
+
+ClientLayoutController.prototype.setupLayout = function()
+{
+    var that = this;
+    var $body = $(document.body);
+
+    var $titleDiv = this.createElement('div', null, $body);
+    $titleDiv.text('StatusBoard');
+
+    var $configDiv = this.createElement('div',
+        {
+            id:'config'
+        },
+        $body);
+
+    var $addItemDiv = this.createElement('div',
+        {
+            id:'addItem'
+        },
+        $configDiv);
+
+    var $addText = $(document.createElement('h3'));
+    $addText.text('Add Item');
+    $addItemDiv.append($addText);
+
+    var $addConfigDiv = this.createElement('div', null, $addItemDiv);
+
+    var $radioForm = this.createElement('form',
+        {
+            id:'newItemRadioForm'
+        },
+        $addConfigDiv);
+
+    for(var idx = 0, len = this.itemTypeConfig.length; idx < len; idx++)
+    {
+        var subItem = this.itemTypeConfig[idx];
+        var $radioBtn = this.createElement('input',
+            {
+                type:'radio',
+                name:'newItemRadio',
+                value:subItem.type
+            },
+            $radioForm);
+        $radioBtn.change(getRadioChangeFunc(this, subItem));
+        $radioForm.append(subItem.text);
+    }
+
+    $addConfigDiv.append('Description:');
+    $addConfigDiv.append(this.itemConfigControls.$descriptionBox);
+    this.createElement('br', null, $addConfigDiv);
+    $addConfigDiv.append(this.itemConfigControls.$textBox);
+    this.createElement('br', null,  $addConfigDiv);
+    $addConfigDiv.append(this.itemConfigControls.$textArea);
+    this.createElement('br', null,  $addConfigDiv);
+
+    var $submitBtn = this.createElement('input',
+        {
+            type:'button',
+            value:'Add Item'
+        },
+        $addConfigDiv);
+    $submitBtn.click(function()
+    {
+        // TODO: error check a bit?
+        var selectedType = $('input[name=newItemRadio]:checked', '#newItemRadioForm').val();
+        var typeObj = that.itemTypeConfigMap[selectedType];
+        typeObj.createItem();
+    });
+
+    $addItemDiv.accordion(
+        {
+            collapsible: true,
+            active: false
+        });
+
+    $body.append($(document.createElement('hr')));
+
+    // add the data div
+    this.createElement('div',
+        {
+            id:'statusdata'
+        },
+        $body);
+
+    $body.append($(document.createElement('hr')));
 }
 
 // TODO: use validator.w3.org
@@ -39,13 +263,15 @@ ClientLayoutController.prototype.processUpdate = function()
                 {
                     id:item.i
                 });
+            $divItem.append(item.d);
             controlFunc.apply(this, [item, $divItem]);
             var deleteButton = $(document.createElement('input'));
             deleteButton.attr(
                 {
                     type:'button',
                     value:'-'
-                });
+                },
+                $divItem);
             deleteButton.click(function() { that.communicator.deleteItem(item.i); });
             $divItem.append(deleteButton);
             listItem.append($divItem);
@@ -152,7 +378,7 @@ ClientLayoutController.prototype.addCheckboxItem = function(item, $divItem)
         {
             that.communicator.pushUpdate(that.getCheckboxItemValue(item.i, this));
         });
-    if(item.v.t === '1')
+    if(item.v.t === item.v.o[1])
     {
         $checkBox.prop('checked', true);
     }
@@ -200,6 +426,6 @@ ClientLayoutController.prototype.getItemValue = function(id, item)
 ClientLayoutController.prototype.getCheckboxItemValue = function(id, checkbox)
 {
     var obj = this.statusContainer.statusBoardData.smap[id];
-    obj.v.t = checkbox.checked ? '1' : '0';
+    obj.v.t = checkbox.checked ? obj.v.o[1] : obj.v.o[0];
     return obj;
 }

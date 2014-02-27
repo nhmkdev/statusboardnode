@@ -6,8 +6,8 @@ var StatusBoardObj = require("./statusboard");
 var statusBoardCollection = require("./statusboardcollection");
 
 var testData = new StatusBoardObj();
-testData.addItem('text', { t: 'test5'});
-testData.addItem('text', { t: 'test13'});
+testData.addItem('text', 'Test Field', { t: 'test5' });
+testData.addItem('text', 'Another Field', { t: 'test13'});
 
 statusBoardCollection['/test'] = testData;
 

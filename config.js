@@ -1,4 +1,5 @@
 var path = require('path');
+var fs = require('fs');
 var util = require('./util');
 
 exports.settings =
@@ -33,7 +34,7 @@ addSupportedFile(exports.settings.jqueryuicss, validFiles);
 addSupportedFile(exports.settings.utilscript, validFiles);
 addSupportedFile(exports.settings.clientcommunicatorscript, validFiles);
 addSupportedFile(exports.settings.clientlayoutcontrollerscript, validFiles);
-addSupportedFile('/images/ui-bg_glass_75_e6e6e6_1x400.png', validFiles);
+addSupportedFolder('./images', validFiles);
 
 var remappedFiles = {};
 addSupportedFile(exports.settings.indexfile, remappedFiles,
@@ -47,6 +48,17 @@ addSupportedFile(exports.settings.indexfile, remappedFiles,
         combinedIndex = combinedIndex.replace('<!--CLIENTLAYOUTCRIPT-->', '<script src="' + exports.settings.clientlayoutcontrollerscript + '"></script>');
         return combinedIndex;
     });
+
+function addSupportedFolder(path, fileSet)
+{
+    var files = fs.readdirSync(path);
+    // remove the leading '.' char
+    path = path.substring(1);
+    for(var idx = 0, len = files.length; idx < len; idx++)
+    {
+        addSupportedFile(path + '/' + files[idx], fileSet);
+    }
+}
 
 function addSupportedFile(filePath, fileSet, postProcessFunc)
 {

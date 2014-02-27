@@ -9,7 +9,7 @@
 <!--CLIENTLAYOUTCRIPT-->
 <style>
     #statusdata ul { list-style-type: none; margin: 0; padding: 0; margin-bottom: 10px; }
-    #statusdata li { margin: 5px; padding: 5px; width: 280px; }
+    #statusdata li { margin: 5px; padding: 5px; width: 100%; }
 </style>
 <script>
 
@@ -24,28 +24,19 @@ var clientCommunicator = new ClientCommunicator(statusContainer);
 clientCommunicator.setLayoutController(clientLayoutController);
 clientLayoutController.setCommunicator(clientCommunicator);
 
-// initial call to update
-clientCommunicator.sendUpdate(true);
-
-// TODO: consider long polling instead of periodic polling
-// AJAX Abort http://stackoverflow.com/questions/446594/abort-ajax-requests-using-jquery
-
-// TODO: the controls for adding items should be up top with divs that expand to allow for custom fields (also the onclick is meh?)
-
 </script>
-<head>
+<head/>
+<body/>
+<script>
+    // TODO: put this in an onload event?
+    clientLayoutController.setupLayout();
 
-<body>
-StatusBoard
-<hr>
-<div id="statusdata"></div>
-<hr>
-<div id="controls">
-    <input type="text" id="newitemtext" value="New Item"/>
-    <input type="button" value="Text+" onclick="clientCommunicator.addItem('text')">
-    <input type="button" value="Checkbox+" onclick="clientCommunicator.addItem('checkbox')">
-    <input type="button" value="Radio+" onclick="clientCommunicator.addItem('radio')">
-    <input type="button" value="Select+" onclick="clientCommunicator.addItem('select')">
-</div>
-</body>
+    // initial call to update
+    clientCommunicator.sendUpdate(true);
+
+    // TODO: consider long polling instead of periodic polling
+    // AJAX Abort http://stackoverflow.com/questions/446594/abort-ajax-requests-using-jquery
+
+    // TODO: the controls for adding items should be up top with divs that expand to allow for custom fields (also the onclick is meh?)
+</script>
 </html>

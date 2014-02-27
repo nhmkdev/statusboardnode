@@ -91,11 +91,11 @@ ClientCommunicator.prototype.pushUpdate = function(updateData)
     );
 }
 
-ClientCommunicator.prototype.addItem = function(type)
+ClientCommunicator.prototype.addItem = function(type, description, value)
 {
     // TODO: hard coded text creation...
     var that = this;
-    this.ajaxPOSTRequest({action:'additem', t:type, v: { t:'new item' }},
+    this.ajaxPOSTRequest({action:'additem', t:type, d:description, v:value},
         function(response, code, xhr)
         {
             // TODO...
@@ -146,6 +146,7 @@ ClientCommunicator.prototype.ajaxGETRequest = function(data, success)
 
 ClientCommunicator.prototype.ajaxPOSTRequest = function(data, success)
 {
+    console.log('POSTING: ' + JSON.stringify(data));
     $.ajax(
         {
             cache : false,
