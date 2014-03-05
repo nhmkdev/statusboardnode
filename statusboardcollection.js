@@ -1,6 +1,6 @@
 var StatusBoards = {};
 
-// TODO: these should remain as just raw functions to avoid conflicting...
+// TODO: these should remain as just raw functions to avoid conflicting...?
 
 function loadBoards()
 {

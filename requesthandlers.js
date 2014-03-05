@@ -1,7 +1,7 @@
 var config = require("./config");
 var util = require("./util");
 var fs = require('fs');
-
+/*
 // TODO: data and processors should be part of objects so each instance of the status server can run infinte status boards
 // TODO: cache the json stringified version of the data (and reset on version change)
 
@@ -65,7 +65,7 @@ function sendUpdate(urlData, statusBoardCollection, response)
     else
     {
         // TODO: return proper error
-        return404();
+        return404(response);
     }
 }
 
@@ -157,29 +157,4 @@ exports.addItem = addItem;
 exports.deleteItem = deleteItem;
 exports.moveItem = moveItem;
 exports.addHandlerConfig = addHandlerConfig;
-
-//////////
-// Support
-//////////
-
-function respondWithContents(response, data, contenttype)
-{
-    // TODO: make this method accept an object with properties instead of params (so return404 could just use it)
-    contenttype = util.getProperty(contenttype, 'text/plain');
-    response.writeHead(200, {"Content-Type": contenttype});
-    if(typeof data !== 'undefined')
-    {
-        response.write(data);
-    }
-    response.end();
-}
-
-function return404(response)
-{
-    response.writeHead(404,
-    {
-        "Content-Type": "text/plain"
-    });
-    response.write("404 Not Found\n");
-    response.end();
-}
+    */

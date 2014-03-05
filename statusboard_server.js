@@ -1,34 +1,26 @@
 var config = require("./config");
+var siteFiles = require("./sitefiles");
 var server = require("./server");
 var requestRouters = require("./requestRouters");
-var requestHandlers = require("./requesthandlers");
+var statusBoard = require("./statusboard");
+//var requestHandlers = require("./requesthandlers");
 
 // Configure routers
 var routers = {};
-routers['POST'] =
-{
-    hasQueryString:false,
-    func:requestRouters.postrouter
-};
-routers['GET'] =
-{
-    hasQueryString:true,
-    func:requestRouters.getrouter
-}
+requestRouters.addRouter(routers, 'POST', false, requestRouters.postrouter);
+requestRouters.addRouter(routers, 'GET', true, requestRouters.getrouter);
+requestRouters.addRouter(routers, 'DELETE', true, requestRouters.deleterouter);
 
-// Configure handlers
-var handlers = {};
-requestHandlers.addHandlerConfig(handlers, '/', requestHandlers.root, true); // handler for loading a given status board
-// request handlers (action param of the url)
-// TODO: consider putting these into another object ?)
-// TODO: add in the fields that must be specified with each as a validation step when calling the handler
-requestHandlers.addHandlerConfig(handlers, 'sendupdate', requestHandlers.sendUpdate, true);
-requestHandlers.addHandlerConfig(handlers, 'pushitemupdate', requestHandlers.pushItemUpdate, true);
-requestHandlers.addHandlerConfig(handlers, 'getdataversion', requestHandlers.getDataVersion, true);
-requestHandlers.addHandlerConfig(handlers, 'addboard', requestHandlers.addBoard, false);
-requestHandlers.addHandlerConfig(handlers, 'additem', requestHandlers.addItem, true);
-requestHandlers.addHandlerConfig(handlers, 'deleteitem', requestHandlers.deleteItem, true);
-requestHandlers.addHandlerConfig(handlers, 'moveitem', requestHandlers.moveItem, true);
+var pathProcessors = {};
+statusBoard.addPathProcessor(pathProcessors);
+siteFiles.addPathProcessor(pathProcessors);
+
+// TODO: make path processors an object so adding items is clear from params, not just making on-the-fly objects
+
+// TODO: additional on-the-fly added path processors so users can bookmark a specific board
+// / - load index.html with list of boards
+// /board/[boardid] - load index.html with board preset
+// move current /board/[boardid] -> /board_data/
 
 // Start the server!
-server.start(routers, handlers, config.settings.port);
+server.start(routers, pathProcessors, config.settings.port);

@@ -1,9 +1,7 @@
-var url = require("url");
-var util = require("./util");
+var url = require('url');
+var util = require('./util');
 
-// TODO: consider another way to get the required information from the routers to make the call in the server
-
-function postrouter(request, urlData, actionFunc, errorFunc)
+function postrouter(request, actionFunc, errorFunc)
 {
     request.setEncoding('utf8');
 
@@ -18,9 +16,9 @@ function postrouter(request, urlData, actionFunc, errorFunc)
     {
         try
         {
-            // NOTE: assumes all post data is json
+            // NOTE: assumes all post data responses from the server are json
             var postObj = JSON.parse(postData);
-            actionFunc(postObj.action, postObj);
+            actionFunc(postObj);
         }
         catch(err)
         {
@@ -30,17 +28,25 @@ function postrouter(request, urlData, actionFunc, errorFunc)
     });
 }
 
-function getrouter(request, urlData, actionFunc, errorFunc)
+function getrouter(request, actionFunc, errorFunc)
 {
-    var actionId = urlData.query['action'];
-    // TODO: add in file detection
-    if(typeof actionId === 'undefined')
-    {
-        actionId = '/';
-    }
+    // yawn, pretty dull
+    actionFunc(null);
+}
 
-    actionFunc(actionId, null);
+
+function addRouter(routers, id, hasQueryString, func)
+{
+    routers[id] =
+    {
+        id:id.toLowerCase(),
+        hasQueryString:hasQueryString,
+        func:func
+    }
 }
 
 exports.postrouter = postrouter;
 exports.getrouter = getrouter;
+// TODO: is there a need for a delete/get router?
+exports.deleterouter = getrouter;
+exports.addRouter = addRouter;

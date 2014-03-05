@@ -4,6 +4,7 @@ function ClientCommunicator(statusContainer)
     console.log('x:' + typeof statusContainer === 'undefined');
     this.updateRequester = null;
     this.updatePending = false;
+    this.boardId = '';
 }
 
 ClientCommunicator.prototype.setLayoutController = function(layoutController)
@@ -11,6 +12,11 @@ ClientCommunicator.prototype.setLayoutController = function(layoutController)
     this.layoutController = layoutController;
 }
 
+ClientCommunicator.prototype.setBoardId = function(boardId)
+{
+    this.boardId = boardId;
+    this.sendUpdate(true);
+}
 
 ClientCommunicator.prototype.sendUpdate = function(forceUpdate)
 {
@@ -28,7 +34,9 @@ ClientCommunicator.prototype.sendUpdate = function(forceUpdate)
     if(!forceUpdate)
     {
         var that = this;
-        this.ajaxGETRequest({action:'getdataversion'},
+        this.ajaxGETRequest(
+            {action:'getdataversion'},
+            this.getBoardUrl(),
             function(response, code, xhr)
             {
                 that. updatePending = false;
@@ -49,7 +57,9 @@ ClientCommunicator.prototype.sendUpdate = function(forceUpdate)
     else
     {
         var that = this;
-        this.ajaxGETRequest({action:'sendupdate'},
+        this.ajaxGETRequest(
+            null,
+            this.getBoardUrl(),
             function(response, code, xhr)
             {
                 // TODO: this is a HAAAAACK and requires a bit more thought
@@ -72,17 +82,11 @@ ClientCommunicator.prototype.sendUpdate = function(forceUpdate)
     }
 }
 
-ClientCommunicator.prototype.pushUpdate = function(updateData)
+ClientCommunicator.prototype.updateItem = function(itemId, updateData)
 {
-    // TODO: maintain a client side copy of the status board object to simplify this...
-    var obj = {};
-    obj.s =
-        [
-            updateData
-        ];
-
     var that = this;
-    this.ajaxPOSTRequest({ action:'pushitemupdate', data:obj},
+    this.ajaxPOSTRequest({action:'updateitem', d:updateData},
+        this.getBoardItemUrl(itemId),
         function(response, code, xhr)
         {
             // TODO...
@@ -95,20 +99,23 @@ ClientCommunicator.prototype.addItem = function(type, description, value)
 {
     // TODO: hard coded text creation...
     var that = this;
-    this.ajaxPOSTRequest({action:'additem', t:type, d:description, v:value},
+    this.ajaxPOSTRequest(
+        {action:'additem', t:type, d:description, v:value},
+        this.getBoardItemUrl('+'), // on item add the item id is whatever
         function(response, code, xhr)
         {
-            // TODO...
+            // TODO:...
             that.sendUpdate(true);
         }
     );
 }
 
-ClientCommunicator.prototype.deleteItem = function(id)
+ClientCommunicator.prototype.deleteItem = function(itemId)
 {
-    // TODO: hard coded text creation...
     var that = this;
-    this.ajaxPOSTRequest({action:'deleteitem', i:id},
+    this.ajaxDELETERequest(
+        null,
+        this.getBoardItemUrl(itemId),
         function(response, code, xhr)
         {
             // TODO...
@@ -129,31 +136,74 @@ ClientCommunicator.prototype.moveItem = function(id, destination)
     );
 }
 
-ClientCommunicator.prototype.ajaxGETRequest = function(data, success)
+ClientCommunicator.prototype.getBoardUrl = function()
 {
+    return window.location.origin + '/board/' + this.boardId;
+}
+
+ClientCommunicator.prototype.getBoardItemUrl = function(itemId)
+{
+    return this.getBoardUrl() + '/' + itemId;
+}
+
+ClientCommunicator.prototype.getBoardList = function()
+{
+    // TODO: TEMP while re-evaluating RESTness
+    var that = this;
+    this.ajaxGETRequest(
+        null,
+        window.location.origin + '/boards',
+        function(response, code, xhr)
+        {
+            console.log(response);
+            that.layoutController.resetBoards(JSON.parse(response));
+        });
+}
+
+// TODO: reduce these functions if possible
+
+ClientCommunicator.prototype.ajaxDELETERequest = function(data, url, success)
+{
+    console.log('DELETE: ' + (data == null ? 'null' : JSON.stringify(data)) + ' TO: ' + url);
     $.ajax(
         {
             cache : false,
             // setup the server address
-            type: 'GET',
+            type: 'DELETE',
             processData: true,
-            url : window.location,
+            url : url,
             data: data,
             success : success
         }
     );
 }
 
-ClientCommunicator.prototype.ajaxPOSTRequest = function(data, success)
+ClientCommunicator.prototype.ajaxGETRequest = function(data, url, success)
 {
-    console.log('POSTING: ' + JSON.stringify(data));
+    console.log('GET: ' + (data == null ? 'null' : JSON.stringify(data)) + ' TO: ' + url);
+    $.ajax(
+        {
+            cache : false,
+            // setup the server address
+            type: 'GET',
+            processData: true,
+            url : url,
+            data: data,
+            success : success
+        }
+    );
+}
+
+ClientCommunicator.prototype.ajaxPOSTRequest = function(data, url, success)
+{
+    console.log('POST: ' + JSON.stringify(data) + ' TO: ' + url);
     $.ajax(
         {
             cache : false,
             // setup the server address
             type: 'POST',
             processData: false,
-            url : window.location,
+            url : url,
             data: JSON.stringify(data),
             success : success
         }

@@ -1,3 +1,4 @@
+<!DOCTYPE HTML>
 <html>
 <!-- TODO: favicon -->
 <!-- Server populates the JQUERYSCRIPT with the contents specified in the config.js -->
@@ -7,11 +8,9 @@
 <!--UTILSCRIPT-->
 <!--CLIENTCOMMSCRIPT-->
 <!--CLIENTLAYOUTCRIPT-->
-<style>
-    #statusdata ul { list-style-type: none; margin: 0; padding: 0; margin-bottom: 10px; }
-    #statusdata li { margin: 5px; padding: 5px; width: 100%; }
-</style>
 <script>
+
+// TODO: status board selector
 
 var statusContainer =
 {
@@ -25,14 +24,23 @@ clientCommunicator.setLayoutController(clientLayoutController);
 clientLayoutController.setCommunicator(clientCommunicator);
 
 </script>
-<head/>
+<head>
+    <style>
+        #statusdata ul { list-style-type: none; margin: 0; padding: 0; margin-bottom: 10px; }
+        #statusdata li { margin: 5px; padding: 5px; width: 100%; }
+    </style>
+    <title>StatusBoard</title>
+</head>
 <body/>
 <script>
     // TODO: put this in an onload event?
     clientLayoutController.setupLayout();
 
     // initial call to update
-    clientCommunicator.sendUpdate(true);
+    //clientCommunicator.sendUpdate(true);
+
+    // get the board list
+    clientCommunicator.getBoardList();
 
     // TODO: consider long polling instead of periodic polling
     // AJAX Abort http://stackoverflow.com/questions/446594/abort-ajax-requests-using-jquery

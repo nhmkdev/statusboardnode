@@ -1,3 +1,4 @@
+
 function ClientLayoutController(statusContainer)
 {
     this.statusContainer = statusContainer;
@@ -6,6 +7,13 @@ function ClientLayoutController(statusContainer)
     this.controlMap['radio'] = this.addRadioItem;
     this.controlMap['checkbox'] = this.addCheckboxItem;
     this.controlMap['select'] = this.addSelectItem;
+
+    var that = this;
+
+    this.itemDeleteButtonFunc = function()
+    {
+        that.communicator.deleteItem($(this).parent().attr('id'));
+    }
 
     this.itemConfigControls =
     {
@@ -23,8 +31,6 @@ function ClientLayoutController(statusContainer)
                 cols:'50'
             })
     }
-
-    var that = this;
 
     // TODO: consider just making complete separate objects out of these?
     // TODO: might be able to minimize the code duplication if the createItem returns the "value" object
@@ -160,6 +166,12 @@ ClientLayoutController.prototype.setupLayout = function()
     var $titleDiv = this.createElement('div', null, $body);
     $titleDiv.text('StatusBoard');
 
+    var $boardSelect = this.createElement('div',
+        {
+            id:'boardSelect'
+        },
+        $body);
+
     var $configDiv = this.createElement('div',
         {
             id:'config'
@@ -201,8 +213,10 @@ ClientLayoutController.prototype.setupLayout = function()
     $addConfigDiv.append('Description:');
     $addConfigDiv.append(this.itemConfigControls.$descriptionBox);
     this.createElement('br', null, $addConfigDiv);
+    $addConfigDiv.append('Value:');
     $addConfigDiv.append(this.itemConfigControls.$textBox);
     this.createElement('br', null,  $addConfigDiv);
+    $addConfigDiv.append('Options:');
     $addConfigDiv.append(this.itemConfigControls.$textArea);
     this.createElement('br', null,  $addConfigDiv);
 
@@ -245,8 +259,8 @@ ClientLayoutController.prototype.processUpdate = function()
 {
     var that = this;
     var updateData = this.statusContainer.statusBoardData;
-    var statusItemList = $(document.createElement('ul'));
-    statusItemList.attr(
+    var $statusItemList = $(document.createElement('ul'));
+    $statusItemList.attr(
         {
             id:'statusdatalist'
         });
@@ -272,10 +286,10 @@ ClientLayoutController.prototype.processUpdate = function()
                     value:'-'
                 },
                 $divItem);
-            deleteButton.click(function() { that.communicator.deleteItem(item.i); });
+            deleteButton.click(this.itemDeleteButtonFunc);
             $divItem.append(deleteButton);
             listItem.append($divItem);
-            statusItemList.append(listItem);
+            $statusItemList.append(listItem);
         }
         else
         {
@@ -285,9 +299,9 @@ ClientLayoutController.prototype.processUpdate = function()
 
     var statusDiv = $('#statusdata');
     statusDiv.empty();
-    statusDiv.append(statusItemList);
-    // TODO: investigate all the options on sortable
-    $('#statusdatalist').sortable(
+    statusDiv.append($statusItemList);
+    // TODO: investigate all the options on sortable (also is $statusItemList the obj below?)
+    /*$('#statusdatalist')*/$statusItemList.sortable(
         {
             start: function(event, ui)
             {
@@ -310,6 +324,28 @@ ClientLayoutController.prototype.processUpdate = function()
     );
 }
 
+ClientLayoutController.prototype.resetBoards = function(boards)
+{
+    var $boardList = $('#boardSelect');
+    $boardList.empty();
+    var that = this;
+    for(var idx = 0, len = boards.length; idx < len; idx++)
+    {
+        //var $a = this.createElement('a', { href: '/board/' + boards[idx]}, $boardList);
+        //$a.text(boards[idx]);
+        var board = boards[idx];
+        var $boardButton = this.createElement(
+            'input',
+            {
+                type:'button',
+                value:board.i + '-' + board.d
+            },
+            $boardList);
+        // TODO: could the id be stored on the control so the function isn't duplicated across all buttons?
+        $boardButton.click(function() { that.communicator.setBoardId(board.i); });
+    }
+}
+
 ClientLayoutController.prototype.addTextItem = function(item, $divItem)
 {
     var that = this;
@@ -322,7 +358,7 @@ ClientLayoutController.prototype.addTextItem = function(item, $divItem)
         });
     textInput.change(function ()
     {
-        that.communicator.pushUpdate(that.getItemValue(item.i, this));
+        that.communicator.updateItem(item.i, that.getItemValue(item.i, this));
     });
     $divItem.append(textInput);
 }
@@ -349,7 +385,7 @@ ClientLayoutController.prototype.addRadioItem = function(item, $divItem)
             });
         $radioBtn.change(function()
         {
-            that.communicator.pushUpdate(that.getItemValue(item.i, this));
+            that.communicator.updateItem(item.i, that.getItemValue(item.i, this));
         });
         if(subItem === item.v.t)
         {
@@ -376,7 +412,7 @@ ClientLayoutController.prototype.addCheckboxItem = function(item, $divItem)
         });
     $checkBox.change(function()
         {
-            that.communicator.pushUpdate(that.getCheckboxItemValue(item.i, this));
+            that.communicator.updateItem(item.i, that.getCheckboxItemValue(item.i, this));
         });
     if(item.v.t === item.v.o[1])
     {
@@ -396,7 +432,7 @@ ClientLayoutController.prototype.addSelectItem = function(item, $divItem)
         });
     $select.change(function()
         {
-            that.communicator.pushUpdate(that.getItemValue(item.i, this));
+            that.communicator.updateItem(item.i, that.getItemValue(item.i, this));
         });
     for(var idx = 0, len = item.v.o.length; idx < len; idx++)
     {
