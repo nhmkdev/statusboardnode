@@ -1,7 +1,8 @@
 var config = require('./config');
-var util = require("./util");
-var webutil = require("./webutil");
-var statusBoardCollection = require("./statusboardcollection");
+var util = require('./util');
+var webutil = require('./webutil');
+var statusBoardCollection = require('./statusboardcollection');
+var pathManager = require('./pathmanager');
 
 function StatusBoard(id, description)
 {
@@ -232,7 +233,7 @@ itemActionMap['updateitem'] = StatusBoard.prototype.updateItem;
 
 pathFunc.postBoardItem = function(response, postObj, urlData, boardId, itemId)
 {
-    // TODO: determine how many REST rules are being broken by this... 
+    // TODO: determine how many REST rules are being broken by this...
     // Add new item or update existing
     var action = postObj['action'];
     if(util.defined(action))
@@ -273,10 +274,9 @@ getBoards = function(response, postObj, urlData)
     webutil.respondWithContents(response, JSON.stringify(results));
 }
 
-function addPathProcessor(pathProcessors)
-{
-    // gets the function to run from this file (no this object required in any case)
-    pathProcessors['board'] = function(pathArray, urlData, router)
+pathManager.addProcessor(
+    'board',
+    function(pathArray, urlData, router)
     {
         var args = [];
         var funcName = '';
@@ -295,12 +295,10 @@ function addPathProcessor(pathProcessors)
         config.logDebug('Board Request: ' + '[' + funcName + ']' + pathArray.join());
         var processFunc = pathFunc[funcName];
         // TODO: a method that builds these objs?
-        return util.defined(processFunc) ? { func:processFunc, additionalArgs:args } : null;
-    }
-    pathProcessors['boards'] = { func:getBoards, additionalArgs:null };
-}
+        return util.defined(processFunc) ? pathManager.getProcessorObject(processFunc, args) : null;
+    });
 
-exports.addPathProcessor = addPathProcessor;
+pathManager.addProcessor('boards', pathManager.getProcessorObject(getBoards));
 
 var testData = new StatusBoard('test', 'Test Status Board');
 testData.addItem(null, {t:'text', d:'Test Field', v:{ t: 'test5' }});

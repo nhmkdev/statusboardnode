@@ -1,19 +1,7 @@
 var config = require("./config");
-var siteFiles = require("./sitefiles");
 var server = require("./server");
-var requestRouters = require("./requestRouters");
-var statusBoard = require("./statusboard");
-//var requestHandlers = require("./requesthandlers");
-
-// Configure routers
-var routers = {};
-requestRouters.addRouter(routers, 'POST', false, requestRouters.postrouter);
-requestRouters.addRouter(routers, 'GET', true, requestRouters.getrouter);
-requestRouters.addRouter(routers, 'DELETE', true, requestRouters.deleterouter);
-
-var pathProcessors = {};
-statusBoard.addPathProcessor(pathProcessors);
-siteFiles.addPathProcessor(pathProcessors);
+var siteFiles = require("./sitefiles"); // just requiring this file adds the paths
+var statusBoard = require("./statusboard"); // just requiring this file adds the paths
 
 // TODO: make path processors an object so adding items is clear from params, not just making on-the-fly objects
 
@@ -23,4 +11,4 @@ siteFiles.addPathProcessor(pathProcessors);
 // move current /board/[boardid] -> /board_data/
 
 // Start the server!
-server.start(routers, pathProcessors, config.settings.port);
+server.start(config.settings.port);

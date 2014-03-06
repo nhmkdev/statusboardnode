@@ -4,6 +4,7 @@ var path = require('path');
 var util = require('./util');
 var config = require("./config");
 var webutil = require('./webutil');
+var pathManager = require('./pathmanager');
 
 // TODO: this may belong in a file.js object to keep config truly as a config
 var fileCache = {}; // unlimited cache of files (not recommended for mammoth sites haha)
@@ -103,17 +104,16 @@ function getFile(response, postData, urlData)
     }
 }
 
-function addPathProcessor(pathProcessors)
+function addPathProcessors()
 {
     loadIndex();
     for(var path in validFiles)
     {
         if(validFiles.hasOwnProperty(path))
         {
-            config.logDebug('addPathProcessor: ' + path);
-            pathProcessors[path] = { func:getFile, additionalArgs:[path] };
+            pathManager.addProcessor(path, pathManager.getProcessorObject(getFile, path));
         }
     }
+    console.log('Added sitefiles path processors.');
 }
-
-exports.addPathProcessor = addPathProcessor;
+addPathProcessors();
