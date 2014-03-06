@@ -1,4 +1,4 @@
-var config = require('./config');
+var logger = require('./logger');
 var util = require('./util');
 
 function PathManager()
@@ -9,7 +9,7 @@ function PathManager()
 // function needs to return an object created by getProcessorObject OR as an object just a value created by getProcessorObject
 PathManager.prototype.addProcessor = function(path, objOrFunc)
 {
-    config.logDebug('Adding path processor: ' + path);
+    logger.logDebug('Adding path processor: ' + path);
     this.processors[path] = objOrFunc;
 }
 
@@ -24,7 +24,7 @@ PathManager.prototype.getProcessor = function(urlData, router)
         return null;
     }
     // NOTE: hacky? this allows for files to be checked first then object processors
-    console.log(urlData.pathname + ':' + router.id);
+    logger.log(urlData.pathname + ':' + router.id);
     var processorData = this.processors[urlData.pathname];
     if(util.defined(processorData) === false)
     {
@@ -47,7 +47,7 @@ PathManager.prototype.getProcessor = function(urlData, router)
     }
     else
     {
-        config.logDebug('Failed to find processor for: ' + urlData.pathname);
+        logger.logDebug('Failed to find processor for: ' + urlData.pathname);
     }
     return null;
 }

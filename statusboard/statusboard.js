@@ -1,5 +1,6 @@
 var config = require('./config');
-var util = require('./util');
+var util = require('../pathserver/util');
+var logger = require('../pathserver/logger');
 var statusBoardCollection = require('./statusboardcollection');
 
 function StatusBoard(id, description)
@@ -99,7 +100,7 @@ StatusBoard.prototype.deleteItem = function(id)
 
 StatusBoard.prototype.updateItem = function(itemId, postObj)
 {
-    config.logDebug('updateItem called: ' + this.id + ':' + itemId);
+    logger.logDebug('updateItem called: ' + this.id + ':' + itemId);
     var sourceObj = postObj.d;
     var targetObj = this.smap[itemId];
     if(util.defined(targetObj) && util.defined(sourceObj))
@@ -111,12 +112,12 @@ StatusBoard.prototype.updateItem = function(itemId, postObj)
         if(config.settings.debug)
         {
             // extra check so as to not waste processing time on the json.stringify calls
-            config.logDebug('updateItems: OldValue:' + JSON.stringify(targetObj.v) + ' NewValue:' + JSON.stringify(sourceObj.v));
+            logger.logDebug('updateItems: OldValue:' + JSON.stringify(targetObj.v) + ' NewValue:' + JSON.stringify(sourceObj.v));
         }
     }
     else
     {
-        console.log('Failed to map update data: ' + sourceObj.i);
+        logger.log('Failed to map update data: ' + sourceObj.i);
     }
 }
 
@@ -129,12 +130,12 @@ StatusBoard.prototype.getBoardAsJSON = function()
 {
     try
     {
-        config.logDebug('getBoardAsJSON: called');
+        logger.logDebug('getBoardAsJSON: called');
         return JSON.stringify(this, dataReplacer);
     }
     catch(error)
     {
-        config.log('getBoardAsJSON Error: ' + error);
+        logger.log('getBoardAsJSON Error: ' + error);
     }
     return false;
 }

@@ -1,6 +1,6 @@
 var http = require('http');
 var url = require('url');
-var config = require('./config');
+var logger = require('./logger');
 var util = require('./util');
 var pathManager = require('./pathmanager');
 var requestHandler = require('./requesthandler');
@@ -17,7 +17,7 @@ function start(port)
             if(processorData == null)
             {
                 // TODO: kill off the response
-                config.log('Bad path: ' + urlData.pathname)
+                logger.log('Bad path: ' + urlData.pathname)
             }
             else
             {
@@ -39,12 +39,12 @@ function start(port)
         else
         {
             //TODO: log and return error
-            console.log('Unsupported method: ' + request.method)
+            logger.log('Unsupported method: ' + request.method)
         }
 	}
 
 	http.createServer(onRequest).listen(port);
-	console.log("Server has started on port:" + port);
+    logger.log("Server has started on port:" + port);
 }
 
 exports.start = start;

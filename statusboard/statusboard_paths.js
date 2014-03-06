@@ -1,9 +1,10 @@
-var util = require('./util');
-var webutil = require('./webutil');
-var config = require('./config');
+var util = require('../pathserver/util');
+var webutil = require('../pathserver/webutil');
+var logger = require('../pathserver/logger');
+var pathManager = require('../pathserver/pathmanager');
 
+var config = require('./config');
 var statusBoardCollection = require('./statusboardcollection');
-var pathManager = require('./pathmanager');
 var StatusBoard = require('./statusboard');
 
 // TODO: this section may break into another file, statusboardhandler?
@@ -15,10 +16,10 @@ function getBoardAndAct(boardId, func, args)
     var board = statusBoardCollection[boardId];
     if(util.defined(board))
     {
-        config.logDebug('Calling function on Board: ' + boardId /*+ '\n' + func*/);
+        logger.logDebug('Calling function on Board: ' + boardId /*+ '\n' + func*/);
         return func.apply(board, args);
     }
-    config.logDebug('Missing Board: ' + boardId);
+    logger.logDebug('Missing Board: ' + boardId);
     return false;
 }
 
@@ -102,7 +103,7 @@ pathFunc.postBoardItem = function(response, postObj, urlData, boardId, itemId)
         }
         else
         {
-            config.log('postBoardItem: Unknown action: ' + action);
+            logger.log('postBoardItem: Unknown action: ' + action);
             // TODO: error
             webutil.return404(response);
         }
@@ -110,7 +111,7 @@ pathFunc.postBoardItem = function(response, postObj, urlData, boardId, itemId)
     else
     {
         // TODO: error
-        config.log('postBoardItem: action not included in post data');
+        logger.log('postBoardItem: action not included in post data');
         webutil.return404(response);
     }
 }
@@ -147,7 +148,7 @@ pathManager.addProcessor(
             funcName += 'Item';
             args.push(pathArray[3]);
         }
-        config.logDebug('Board Request: ' + '[' + funcName + ']' + pathArray.join());
+        logger.logDebug('Board Request: ' + '[' + funcName + ']' + pathArray.join());
         var processFunc = pathFunc[funcName];
         // TODO: a method that builds these objs?
         return util.defined(processFunc) ? pathManager.getProcessorObject(processFunc, args) : null;

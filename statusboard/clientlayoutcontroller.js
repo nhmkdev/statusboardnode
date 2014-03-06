@@ -1,4 +1,3 @@
-
 function ClientLayoutController(statusContainer)
 {
     this.statusContainer = statusContainer;

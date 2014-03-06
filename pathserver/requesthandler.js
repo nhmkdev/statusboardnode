@@ -1,6 +1,3 @@
-var url = require('url');
-var util = require('./util');
-
 function RequestHandler()
 {
     var routers = {};

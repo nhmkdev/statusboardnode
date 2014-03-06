@@ -1,10 +1,14 @@
 var fs = require('fs');
 var path = require('path');
 
-var util = require('./util');
-var config = require("./config");
-var webutil = require('./webutil');
-var pathManager = require('./pathmanager');
+var util = require('../pathserver/util');
+var logger = require('../pathserver/logger');
+var webutil = require('../pathserver/webutil');
+var pathManager = require('../pathserver/pathmanager');
+
+var config = require('./config');
+
+// TODO: consider a pathserver side file that handles basic files...
 
 // TODO: this may belong in a file.js object to keep config truly as a config
 var fileCache = {}; // unlimited cache of files (not recommended for mammoth sites haha)
@@ -16,18 +20,20 @@ addSupportedFile(config.settings.jqueryuicss, validFiles);
 addSupportedFile(config.settings.utilscript, validFiles);
 addSupportedFile(config.settings.clientcommunicatorscript, validFiles);
 addSupportedFile(config.settings.clientlayoutcontrollerscript, validFiles);
-addSupportedFolder('./images', validFiles);
+addSupportedFolder('./3rdparty/jqueryui/images', validFiles);
 
 var remappedFiles = {};
 
-function addSupportedFolder(path, fileSet)
+//TODO: using 'path' as a var overlaps with the nodejs path functionality...
+
+function addSupportedFolder(filePath, fileSet)
 {
-    var files = fs.readdirSync(path);
-    // remove the leading '.' char
-    path = path.substring(1);
+    var files = fs.readdirSync(filePath);
+    // remove the leading '.' char // TODO: THIS IS A HACK
+    filePath = filePath.substring(1);
     for(var idx = 0, len = files.length; idx < len; idx++)
     {
-        addSupportedFile(path + '/' + files[idx], fileSet);
+        addSupportedFile(filePath + '/' + files[idx], fileSet);
     }
 }
 
@@ -41,7 +47,7 @@ function addSupportedFile(filePath, fileSet, extOverride)
     }
     else
     {
-        console.log('Unsupported extension - Cannot add: ' + filePath);
+        logger.log('Unsupported extension - Cannot add: ' + filePath);
     }
 }
 
@@ -64,12 +70,12 @@ function loadIndex()
         addSupportedFile('/', validFiles, extData);
         // TODO: function for setting this up?
         remappedFiles['/'] = config.settings.indexfile;
-        config.logDebug('Loaded Index File.');
+        logger.logDebug('Loaded Index File.');
     }
     catch (error)
     {
         // TODO: shutdown
-        config.logDebug('Index Load Error: ' + error);
+        logger.logDebug('Index Load Error: ' + error);
     }
 }
 
@@ -107,13 +113,14 @@ function getFile(response, postData, urlData)
 function addPathProcessors()
 {
     loadIndex();
-    for(var path in validFiles)
+    for(var filePath in validFiles)
     {
-        if(validFiles.hasOwnProperty(path))
+        if(validFiles.hasOwnProperty(filePath))
         {
-            pathManager.addProcessor(path, pathManager.getProcessorObject(getFile, path));
+            pathManager.addProcessor(filePath, pathManager.getProcessorObject(getFile, filePath));
         }
     }
-    console.log('Added sitefiles path processors.');
+    logger.log('Added sitefiles path processors.');
 }
+
 addPathProcessors();
