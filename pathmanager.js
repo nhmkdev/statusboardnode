@@ -6,6 +6,7 @@ function PathManager()
     this.processors = {};
 }
 
+// function needs to return an object created by getProcessorObject OR as an object just a value created by getProcessorObject
 PathManager.prototype.addProcessor = function(path, objOrFunc)
 {
     config.logDebug('Adding path processor: ' + path);
@@ -51,6 +52,8 @@ PathManager.prototype.getProcessor = function(urlData, router)
     return null;
 }
 
+
+// func needs to have this prototype: (response, postObj, urlData, additionalargs...)
 PathManager.prototype.getProcessorObject = function(func, additionalArgs)
 {
     return { f:func, aa:(util.defined(additionalArgs) ? additionalArgs : null) };

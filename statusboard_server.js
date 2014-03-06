@@ -1,7 +1,7 @@
 var config = require("./config");
 var server = require("./server");
 var siteFiles = require("./sitefiles"); // just requiring this file adds the paths
-var statusBoard = require("./statusboard"); // just requiring this file adds the paths
+var statusBoard = require("./statusboard_paths"); // just requiring this file adds the paths
 
 // TODO: make path processors an object so adding items is clear from params, not just making on-the-fly objects
 
