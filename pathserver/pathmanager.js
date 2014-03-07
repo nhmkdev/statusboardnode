@@ -7,10 +7,15 @@ function PathManager()
 }
 
 // function needs to return an object created by getProcessorObject OR as an object just a value created by getProcessorObject
-PathManager.prototype.addProcessor = function(path, objOrFunc)
+PathManager.prototype.addProcessor = function(urlPath, objOrFunc)
 {
-    logger.logDebug('Adding path processor: ' + path);
-    this.processors[path] = objOrFunc;
+    logger.logDebug('Added path processor: ' + urlPath);
+    this.processors[urlPath] = objOrFunc;
+}
+
+PathManager.prototype.removeProcessor = function(urlPath)
+{
+    delete this.processors[urlPath];
 }
 
 PathManager.prototype.getProcessor = function(urlData, router)
@@ -28,6 +33,7 @@ PathManager.prototype.getProcessor = function(urlData, router)
     var processorData = this.processors[urlData.pathname];
     if(util.defined(processorData) === false)
     {
+        logger.logDebug('Testing for sub processor: ' + pathArray[1]);
         processorData = this.processors[pathArray[1]];
     }
 
@@ -43,6 +49,11 @@ PathManager.prototype.getProcessor = function(urlData, router)
         {
             return processorData(pathArray, urlData, router);
         }
+        else if(processorData.rt != router.id)
+        {
+            logger.logDebug('Failed to find processor for: ' + urlData.pathname + ':' + processorData.rt + ':' + router.type);
+            return null;
+        }
         return processorData;
     }
     else
@@ -54,9 +65,9 @@ PathManager.prototype.getProcessor = function(urlData, router)
 
 
 // func needs to have this prototype: (response, postObj, urlData, additionalargs...)
-PathManager.prototype.getProcessorObject = function(func, additionalArgs)
+PathManager.prototype.getProcessorObject = function(requestType, func, additionalArgs)
 {
-    return { f:func, aa:(util.defined(additionalArgs) ? additionalArgs : null) };
+    return { rt:requestType, f:func, aa:(util.defined(additionalArgs) ? additionalArgs : null) };
 }
 
 PathManager.prototype.executeProcessor = function(response, postObj, urlData, processorData)

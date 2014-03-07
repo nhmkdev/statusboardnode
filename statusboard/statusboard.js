@@ -1,7 +1,9 @@
 var config = require('./config');
 var util = require('../pathserver/util');
 var logger = require('../pathserver/logger');
+var pathManager = require('../pathserver/pathmanager')
 var statusBoardCollection = require('./statusboardcollection');
+var siteFiles = require('./sitefiles');
 
 function StatusBoard(id, description)
 {
@@ -23,7 +25,11 @@ StatusBoard.createNew = function(boardId, postObj)
 {
     if(StatusBoard.validateId(boardId))
     {
-        statusBoardCollection[boardId] = new StatusBoard(boardId, postObj.d);
+        var newBoard = new StatusBoard(boardId, postObj.d);
+        statusBoardCollection[boardId] = newBoard;
+        // update the file remapping and add a processor for this board path
+        siteFiles.addRemappedFile('/' + boardId, config.settings.indexfile, config.extensionMap['.html'], true);
+        return newBoard;
     }
     return false;
 }
@@ -41,6 +47,7 @@ StatusBoard.prototype.getNextItemId = function()
 StatusBoard.prototype.deleteSelf = function()
 {
     delete statusBoardCollection[this.id];
+    pathManager.removeProcessor('/' + this.id);
 }
 
 StatusBoard.prototype.update = function(postObj)

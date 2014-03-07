@@ -51,7 +51,7 @@ RequestHandler.prototype.addRouter = function(routers, id, hasQueryString, func)
     var lower = id.toLowerCase();
     routers[lower] =
     {
-        id:lower,
+        id:lower, // TODO: the name of the variable should be changed...
         hasQueryString:hasQueryString,
         func:func
     }

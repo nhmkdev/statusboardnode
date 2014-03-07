@@ -11,6 +11,8 @@ exports.settings =
     validFiles:{},
     remappedFiles:{},
     postProcessFileFuncs: {},
+    urlPathBoards:'/boards', // access to the list of boards
+    urlPathBoard:'board', // access to a given board (TODO: the fact that this has to NOT have the / is weird)
     // TODO: eventually break this into modes based on type of client (web vs. mobile vs. whatever)
     indexfile:'/statusboard/index.html', // relative path to index.html file (TODO: maybe rename to statusboard.html)
     debug:true // flag for whether the log various things to the console

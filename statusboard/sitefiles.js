@@ -14,40 +14,51 @@ var config = require('./config');
 var fileCache = {}; // unlimited cache of files (not recommended for mammoth sites haha)
 
 var validFiles = {};
-addSupportedFile(config.settings.jqueryscript, validFiles);
-addSupportedFile(config.settings.jqueryuiscript, validFiles);
-addSupportedFile(config.settings.jqueryuicss, validFiles);
-addSupportedFile(config.settings.utilscript, validFiles);
-addSupportedFile(config.settings.clientcommunicatorscript, validFiles);
-addSupportedFile(config.settings.clientlayoutcontrollerscript, validFiles);
-addSupportedFolder('./3rdparty/jqueryui/images', validFiles);
+addSupportedFile(config.settings.jqueryscript);
+addSupportedFile(config.settings.jqueryuiscript);
+addSupportedFile(config.settings.jqueryuicss);
+addSupportedFile(config.settings.utilscript);
+addSupportedFile(config.settings.clientcommunicatorscript);
+addSupportedFile(config.settings.clientlayoutcontrollerscript);
+addSupportedFolder('./3rdparty/jqueryui/images');
 
 var remappedFiles = {};
 
 //TODO: using 'path' as a var overlaps with the nodejs path functionality...
 
-function addSupportedFolder(filePath, fileSet)
+function addSupportedFolder(filePath)
 {
     var files = fs.readdirSync(filePath);
     // remove the leading '.' char // TODO: THIS IS A HACK
     filePath = filePath.substring(1);
     for(var idx = 0, len = files.length; idx < len; idx++)
     {
-        addSupportedFile(filePath + '/' + files[idx], fileSet);
+        addSupportedFile(filePath + '/' + files[idx], validFiles);
     }
 }
 
-function addSupportedFile(filePath, fileSet, extOverride)
+function addSupportedFile(filePath, extensionOverride)
 {
     var ext = path.extname(filePath);
     var extMapping = config.extensionMap[ext];
-    if(util.defined(extMapping) || util.defined(extOverride))
+    if(util.defined(extMapping) || util.defined(extensionOverride))
     {
-        fileSet[filePath] = util.defined(extOverride) ? extOverride : extMapping;
+        validFiles[filePath] = util.defined(extensionOverride) ? extensionOverride : extMapping;
     }
     else
     {
         logger.log('Unsupported extension - Cannot add: ' + filePath);
+    }
+}
+
+function addRemappedFile(urlPath, filePath, extensionOverride, setupPathProcessor)
+{
+    remappedFiles[urlPath] = filePath;
+    addSupportedFile(urlPath, extensionOverride);
+    if(util.getProperty(setupPathProcessor, true))
+    {
+        // TODO: centralize this call (duplicated in the addPathProcessors function)
+        pathManager.addProcessor(urlPath, pathManager.getProcessorObject('get', getFile, filePath));
     }
 }
 
@@ -67,9 +78,7 @@ function loadIndex()
         combinedIndex = combinedIndex.replace('<!--CLIENTLAYOUTCRIPT-->', '<script src="' + config.settings.clientlayoutcontrollerscript + '"></script>');
         indexData = combinedIndex;
         fileCache[config.settings.indexfile] = indexData;
-        addSupportedFile('/', validFiles, extData);
-        // TODO: function for setting this up?
-        remappedFiles['/'] = config.settings.indexfile;
+        addRemappedFile('/', config.settings.indexfile, extData);
         logger.logDebug('Loaded Index File.');
     }
     catch (error)
@@ -117,10 +126,12 @@ function addPathProcessors()
     {
         if(validFiles.hasOwnProperty(filePath))
         {
-            pathManager.addProcessor(filePath, pathManager.getProcessorObject(getFile, filePath));
+            pathManager.addProcessor(filePath, pathManager.getProcessorObject('get', getFile, filePath));
         }
     }
     logger.log('Added sitefiles path processors.');
 }
 
 addPathProcessors();
+
+exports.addRemappedFile = addRemappedFile;

@@ -2,6 +2,7 @@ var http = require('http');
 var url = require('url');
 var logger = require('./logger');
 var util = require('./util');
+var webutil = require('./webutil');
 var pathManager = require('./pathmanager');
 var requestHandler = require('./requesthandler');
 
@@ -17,7 +18,8 @@ function start(port)
             if(processorData == null)
             {
                 // TODO: kill off the response
-                logger.log('Bad path: ' + urlData.pathname)
+                logger.log('Bad path: ' + urlData.pathname);
+                webutil.return404(response);
             }
             else
             {

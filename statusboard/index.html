@@ -39,9 +39,16 @@ clientLayoutController.setCommunicator(clientCommunicator);
     // initial call to update
     //clientCommunicator.sendUpdate(true);
 
-    // get the board list
-    clientCommunicator.getBoardList();
-
+    var pathArray = window.location.pathname.split('/');
+    if(pathArray.length >= 2 && pathArray[1].length > 0)
+    {
+        clientCommunicator.setBoardId(pathArray[1]);
+    }
+    else
+    {
+        // get the board list
+        clientCommunicator.getBoardList();
+    }
     // TODO: consider long polling instead of periodic polling
     // AJAX Abort http://stackoverflow.com/questions/446594/abort-ajax-requests-using-jquery
 

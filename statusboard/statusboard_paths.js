@@ -3,6 +3,7 @@ var webutil = require('../pathserver/webutil');
 var logger = require('../pathserver/logger');
 var pathManager = require('../pathserver/pathmanager');
 
+var siteFiles = require('./sitefiles');
 var config = require('./config');
 var statusBoardCollection = require('./statusboardcollection');
 var StatusBoard = require('./statusboard');
@@ -16,7 +17,7 @@ function getBoardAndAct(boardId, func, args)
     var board = statusBoardCollection[boardId];
     if(util.defined(board))
     {
-        logger.logDebug('Calling function on Board: ' + boardId /*+ '\n' + func*/);
+        logger.logDebug('Calling function on Board: ' + boardId);
         return func.apply(board, args);
     }
     logger.logDebug('Missing Board: ' + boardId);
@@ -131,7 +132,7 @@ getBoards = function(response, postObj, urlData)
 }
 
 pathManager.addProcessor(
-    'board',
+    config.settings.urlPathBoard,
     function(pathArray, urlData, router)
     {
         var args = [];
@@ -151,13 +152,13 @@ pathManager.addProcessor(
         logger.logDebug('Board Request: ' + '[' + funcName + ']' + pathArray.join());
         var processFunc = pathFunc[funcName];
         // TODO: a method that builds these objs?
-        return util.defined(processFunc) ? pathManager.getProcessorObject(processFunc, args) : null;
+        return util.defined(processFunc) ? pathManager.getProcessorObject(router.type, processFunc, args) : null;
     });
 
-pathManager.addProcessor('boards', pathManager.getProcessorObject(getBoards));
+pathManager.addProcessor(config.settings.urlPathBoards, pathManager.getProcessorObject('get', getBoards));
 
 // TODO: SAMPLE TEMP DATA
-var testData = new StatusBoard('test', 'Test Status Board');
+var testData = StatusBoard.createNew('test', {d:'Test Status Board'});
 testData.addItem(null, {t:'text', d:'Test Field', v:{ t: 'test5' }});
 testData.addItem(null, {t:'text', d:'Another Field', v:{ t: 'test13'}});
 statusBoardCollection['test'] = testData;
