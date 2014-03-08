@@ -58,7 +58,7 @@ function addRemappedFile(urlPath, filePath, extensionOverride, setupPathProcesso
     if(util.getProperty(setupPathProcessor, true))
     {
         // TODO: centralize this call (duplicated in the addPathProcessors function)
-        pathManager.addProcessor(urlPath, pathManager.getProcessorObject('get', getFile, filePath));
+        pathManager.addProcessor(urlPath, pathManager.createProcessorDataObject('get', getFile, filePath));
     }
 }
 
@@ -126,7 +126,7 @@ function addPathProcessors()
     {
         if(validFiles.hasOwnProperty(filePath))
         {
-            pathManager.addProcessor(filePath, pathManager.getProcessorObject('get', getFile, filePath));
+            pathManager.addProcessor(filePath, pathManager.createProcessorDataObject('get', getFile, filePath));
         }
     }
     logger.log('Added sitefiles path processors.');

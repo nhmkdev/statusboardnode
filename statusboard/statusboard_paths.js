@@ -140,7 +140,7 @@ pathManager.addProcessor(
         if(pathArray.length >= 3)
         {
             // board processing
-            funcName += router.id + 'Board';
+            funcName += router.method + 'Board';
             args.push(pathArray[2]);
         }
         if(pathArray.length >= 4)
@@ -152,10 +152,10 @@ pathManager.addProcessor(
         logger.logDebug('Board Request: ' + '[' + funcName + ']' + pathArray.join());
         var processFunc = pathFunc[funcName];
         // TODO: a method that builds these objs?
-        return util.defined(processFunc) ? pathManager.getProcessorObject(router.type, processFunc, args) : null;
+        return util.defined(processFunc) ? pathManager.createProcessorDataObject(router.type, processFunc, args) : null;
     });
 
-pathManager.addProcessor(config.settings.urlPathBoards, pathManager.getProcessorObject('get', getBoards));
+pathManager.addProcessor(config.settings.urlPathBoards, pathManager.createProcessorDataObject('get', getBoards));
 
 // TODO: SAMPLE TEMP DATA
 var testData = StatusBoard.createNew('test', {d:'Test Status Board'});
