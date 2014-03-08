@@ -1,3 +1,7 @@
+/*
+ ClientLayoutController constructor
+ @param {object} statusContainer - The status container object that has the current status board data object
+ */
 function ClientLayoutController(statusContainer)
 {
     this.statusContainer = statusContainer;
@@ -9,11 +13,18 @@ function ClientLayoutController(statusContainer)
 
     var that = this;
 
+    /*
+     Calls delete item from the context of a given item within a div with the id set to the status board item to delete.
+     This is defined here to cut down on code duplication.
+     */
     this.itemDeleteButtonFunc = function()
     {
         that.communicator.deleteItem($(this).parent().attr('id'));
     }
 
+    /*
+     Definition of the types of inputs required when the user adds a new status board item
+     */
     this.itemConfigControls =
     {
         $descriptionBox:this.createElement('input',
@@ -33,6 +44,10 @@ function ClientLayoutController(statusContainer)
 
     // TODO: consider just making complete separate objects out of these?
     // TODO: might be able to minimize the code duplication if the createItem returns the "value" object
+    /*
+     Definition for the types of status board items that can be added, the required controls from itemConfigControls
+     to do so, and core functionality to perform the add of the item.
+     */
     this.itemTypeConfig =
         [
             {
@@ -117,11 +132,22 @@ function ClientLayoutController(statusContainer)
 }
 // TODO: jquery vars should start with $
 
+/*
+ Sets the communicator object
+ @param {object} communicator - The communicator to associate
+ */
 ClientLayoutController.prototype.setCommunicator = function(communicator)
 {
     this.communicator = communicator;
 }
 
+/*
+ Creates the given element with attributes and appends the given object (if supplied)
+ @param {string} elementType - The type of element to create
+ @param {object} attr - (optional) The attributes to associate with the element
+ @param {jquery object} $appendToObj - (optional) The object to append the element to
+ @return {jquery object} - The new element
+ */
 ClientLayoutController.prototype.createElement = function(elementType, attr, $appendToObj)
 {
     var $element = $(document.createElement(elementType));
@@ -136,6 +162,11 @@ ClientLayoutController.prototype.createElement = function(elementType, attr, $ap
     return $element;
 }
 
+/*
+ Gets the function that handles changes to the radio element when adding an item.
+ @param {object} layoutController - The layoutcontroller containing the item configuration
+ @param {object} item - The item that would be selected from the radio controls
+ */
 function getRadioChangeFunc(layoutController, item)
 {
     return function()
@@ -157,6 +188,9 @@ function getRadioChangeFunc(layoutController, item)
     };
 }
 
+/*
+ Configures the entire layout of the status board (the variable elements)
+ */
 ClientLayoutController.prototype.setupLayout = function()
 {
     var that = this;
@@ -254,6 +288,9 @@ ClientLayoutController.prototype.setupLayout = function()
 // TODO: use validator.w3.org
 // TODO: investigate <label> tag
 
+/*
+ Processes all the status board items and repopulates the status board item layout accordingly
+ */
 ClientLayoutController.prototype.processUpdate = function()
 {
     var that = this;
@@ -323,6 +360,10 @@ ClientLayoutController.prototype.processUpdate = function()
     );
 }
 
+/*
+ Repopulates the board selection div based on the input board data
+ @param {array} boards - Array of board objects from the server
+ */
 ClientLayoutController.prototype.resetBoards = function(boards)
 {
     var $boardList = $('#boardSelect');
@@ -345,6 +386,11 @@ ClientLayoutController.prototype.resetBoards = function(boards)
     }
 }
 
+/*
+ Adds a text status board item
+ @param {object} item - The item definition object
+ @param {jquery object} $divItem - The container to add the item to
+ */
 ClientLayoutController.prototype.addTextItem = function(item, $divItem)
 {
     var that = this;
@@ -357,11 +403,16 @@ ClientLayoutController.prototype.addTextItem = function(item, $divItem)
         });
     textInput.change(function ()
     {
-        that.communicator.updateItem(item.i, that.getItemValue(item.i, this));
+        that.communicator.updateItem(item.i, that.updateItemValue(item.i, this));
     });
     $divItem.append(textInput);
 }
 
+/*
+ Adds a radio status board item
+ @param {object} item - The item definition object
+ @param {jquery object} $divItem - The container to add the item to
+ */
 ClientLayoutController.prototype.addRadioItem = function(item, $divItem)
 {
     var that = this;
@@ -384,7 +435,7 @@ ClientLayoutController.prototype.addRadioItem = function(item, $divItem)
             });
         $radioBtn.change(function()
         {
-            that.communicator.updateItem(item.i, that.getItemValue(item.i, this));
+            that.communicator.updateItem(item.i, that.updateItemValue(item.i, this));
         });
         if(subItem === item.v.t)
         {
@@ -400,6 +451,11 @@ ClientLayoutController.prototype.addRadioItem = function(item, $divItem)
     $divItem.append($radioForm);
 }
 
+/*
+ Adds a checkbox status board item
+ @param {object} item - The item definition object
+ @param {jquery object} $divItem - The container to add the item to
+ */
 ClientLayoutController.prototype.addCheckboxItem = function(item, $divItem)
 {
     var that = this;
@@ -411,7 +467,7 @@ ClientLayoutController.prototype.addCheckboxItem = function(item, $divItem)
         });
     $checkBox.change(function()
         {
-            that.communicator.updateItem(item.i, that.getCheckboxItemValue(item.i, this));
+            that.communicator.updateItem(item.i, that.updateCheckboxItemValue(item.i, this));
         });
     if(item.v.t === item.v.o[1])
     {
@@ -421,6 +477,11 @@ ClientLayoutController.prototype.addCheckboxItem = function(item, $divItem)
     $divItem.append('TODO');
 }
 
+/*
+ Adds a select status board item
+ @param {object} item - The item definition object
+ @param {jquery object} $divItem - The container to add the item to
+ */
 ClientLayoutController.prototype.addSelectItem = function(item, $divItem)
 {
     var that = this;
@@ -431,7 +492,7 @@ ClientLayoutController.prototype.addSelectItem = function(item, $divItem)
         });
     $select.change(function()
         {
-            that.communicator.updateItem(item.i, that.getItemValue(item.i, this));
+            that.communicator.updateItem(item.i, that.updateItemValue(item.i, this));
         });
     for(var idx = 0, len = item.v.o.length; idx < len; idx++)
     {
@@ -451,16 +512,28 @@ ClientLayoutController.prototype.addSelectItem = function(item, $divItem)
     $divItem.append($select);
 }
 
-ClientLayoutController.prototype.getItemValue = function(id, item)
+/*
+ Updates the item value based on the id
+ @param {string} itemId - Id of the status board item
+ @param {object} item - The element to pull the value of
+ @return {object} - The updated status board item
+ */
+ClientLayoutController.prototype.updateItemValue = function(itemId, item)
 {
-    var obj = this.statusContainer.statusBoardData.smap[id];
+    var obj = this.statusContainer.statusBoardData.smap[itemId];
     obj.v.t = item.value;
     return obj;
 }
 
-ClientLayoutController.prototype.getCheckboxItemValue = function(id, checkbox)
+/*
+ Updates the item value based on the id
+ @param {string} itemId - Id of the status board item
+ @param {object} checkbox - The checkbox to pull the checked value of
+ @return {object} - The updated status board item
+ */
+ClientLayoutController.prototype.updateCheckboxItemValue = function(itemId, checkbox)
 {
-    var obj = this.statusContainer.statusBoardData.smap[id];
+    var obj = this.statusContainer.statusBoardData.smap[itemId];
     obj.v.t = checkbox.checked ? obj.v.o[1] : obj.v.o[0];
     return obj;
 }

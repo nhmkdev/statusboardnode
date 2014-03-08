@@ -9,9 +9,14 @@ function RequestMethodHandler()
 {
     var routers = {};
 
-    this.getRouter = function(requestType)
+    /*
+     Gets the router based on the method type
+     @param {string} methodType - The method to get the router of
+     @return {object} - The object representing the router
+     */
+    this.getRouter = function(methodType)
     {
-        return routers[requestType.toLowerCase()];
+        return routers[methodType.toLowerCase()];
     }
 
     /*
