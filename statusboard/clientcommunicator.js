@@ -191,7 +191,9 @@ ClientCommunicator.prototype.deleteItem = function(itemId)
 ClientCommunicator.prototype.moveItem = function(itemId, destination)
 {
     var that = this;
-    this.ajaxPOSTRequest({action:'moveitem', i:itemId, d:destination},
+    this.ajaxPOSTRequest(
+        {action:'moveitem', i:itemId, d:destination},
+        this.getBoardItemUrl(itemId),
         function(response, code, xhr)
         {
             // TODO...

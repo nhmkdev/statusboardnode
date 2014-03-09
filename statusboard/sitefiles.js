@@ -26,6 +26,11 @@ var remappedFiles = {};
 
 //TODO: using 'path' as a var overlaps with the nodejs path functionality...
 
+
+/*
+ Adds all the files in a given folder as allowed files for clients to request via GET (no subfolder recursion)
+ @param {string} filePath - Path from the folder node was launched from to add files from
+ */
 function addSupportedFolder(filePath)
 {
     var files = fs.readdirSync(filePath);
@@ -37,6 +42,12 @@ function addSupportedFolder(filePath)
     }
 }
 
+/*
+TODO: some confusion here on what the input filePath is vs. what the urlPath will be
+ Adds the specified file as an allowed file for clients to request via GET
+ @param {string} filePath - Path to the given file (this is also the url path)
+ @param {object} extensionOverride - The extension object to associate with the path
+ */
 function addSupportedFile(filePath, extensionOverride)
 {
     var ext = path.extname(filePath);
@@ -51,6 +62,14 @@ function addSupportedFile(filePath, extensionOverride)
     }
 }
 
+/*
+ Adds a file that has a file path that maps to a unique url (ie. not the same)
+ @param {string} urlPath - The url for the file
+ @param {string} filePath - The path to the file
+ @param {object} extensionOverride - The extension object to associate with the path
+ @param {bool} setupPathProcessor - flag indicating whether to initialize the processor in the PathManager to use
+ the standard getFile functionality.
+ */
 function addRemappedFile(urlPath, filePath, extensionOverride, setupPathProcessor)
 {
     remappedFiles[urlPath] = filePath;
@@ -63,6 +82,10 @@ function addRemappedFile(urlPath, filePath, extensionOverride, setupPathProcesso
 }
 
 // TODO: this does not resolve the problem of loading the board...
+
+/*
+ Loads the index.html file (TODO: might want different files for board list vs. board data (or not...)
+ */
 function loadIndex()
 {
     try
@@ -89,6 +112,13 @@ function loadIndex()
 }
 
 // TODO: rename validFiles to fileSettings?
+
+/*
+ Standard PathManager processor function that gets a given file (and caches the data)
+ @param {object} response - node.js standard response object
+ @param {object} postData - (unused) post data
+ @param {object} urlData - node.js standard urlData object (url.parsed)
+ */
 function getFile(response, postData, urlData)
 {
     var fileSettings = validFiles[urlData.pathname];
@@ -119,6 +149,10 @@ function getFile(response, postData, urlData)
     }
 }
 
+
+/*
+ Adds the path processors for the associated files
+ */
 function addPathProcessors()
 {
     loadIndex();

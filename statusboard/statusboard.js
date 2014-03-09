@@ -5,22 +5,37 @@ var pathManager = require('../pathserver/pathmanager')
 var statusBoardCollection = require('./statusboardcollection');
 var siteFiles = require('./sitefiles');
 
-function StatusBoard(id, description)
+/*
+ Status board construcor
+ @param {string} boardId - The board identifier (used in the url to access)
+ @param {string} description - The description of the board
+ */
+function StatusBoard(boardId, description)
 {
     this.v = 0; // version of data
     this.i = 0; // item counter
     this.s = []; // field set
-    this.id = id;
+    this.id = boardId;
     this.d = description;
     this.smap = {}; // mapping of the items by 'i' field into the set array
 }
 
-StatusBoard.validateId = function(id)
+/*
+ Validates whether the board id is formatted correctly
+ @param {string} boardId - The id to validate
+ */
+StatusBoard.validateId = function(boardId)
 {
     // TODO: validate id scheme for board
     return true;
 }
 
+/*
+ Creates a new status board.
+ @param {string} boardId - The object to check
+ @param {object} postObj - POST data object containing the necessary fields to construct a status board
+ @return {object/false} - The status board object OR false on error
+ */
 StatusBoard.createNew = function(boardId, postObj)
 {
     if(StatusBoard.validateId(boardId))
@@ -34,27 +49,47 @@ StatusBoard.createNew = function(boardId, postObj)
     return false;
 }
 
+/*
+ Increments the version of the status board data
+ */
 StatusBoard.prototype.incrementVersion = function()
 {
     this.v++;
 }
 
+/*
+ Gets the next identifer for a status board item
+ @return {string} - The unique new identifier
+ */
 StatusBoard.prototype.getNextItemId = function()
 {
     return 'i' + this.i++;
 }
 
+/*
+ Deletes the board
+ */
 StatusBoard.prototype.deleteSelf = function()
 {
     delete statusBoardCollection[this.id];
     pathManager.removeProcessor('/' + this.id);
 }
 
+/*
+ Updates the board settings
+ @param {object} postObj - The post data object containing the fields to update
+ */
 StatusBoard.prototype.update = function(postObj)
 {
+    // TODO
     return true;
 }
 
+/*
+ Adds a new status board item
+ @param {string} itemId - (unused) 
+ @param {object} postObj - The post data object with the fields to define the new status board item
+ */
 StatusBoard.prototype.addItem = function(itemId, postObj)
 {
     // TODO: value validation so people don't send up a bunch of random crap into a board
@@ -71,40 +106,33 @@ StatusBoard.prototype.addItem = function(itemId, postObj)
     this.incrementVersion();
 }
 
-StatusBoard.prototype.moveItem = function(id, destination)
+/*
+ Moves a status board item
+ @param {string} itemId - The item to update
+ @param {object} postObj - The post data object with the fields to move the new status board item
+ */
+StatusBoard.prototype.moveItem = function(itemId, postObj)
 {
-    var item = this.smap[id];
+    var item = this.smap[itemId];
     if(typeof item !== 'undefined')
     {
         var itemIndex = this.s.indexOf(item);
         this.s.splice(itemIndex, 1);
-        this.s.splice(destination, 0, item);
+        this.s.splice(postObj.d, 0, item);
         this.incrementVersion();
     }
     else
     {
-        console.log('StatusBoard:deleteItem: id not found - [' + id + ']');
+        console.log('StatusBoard:deleteItem: id not found - [' + itemId + ']');
     }
     // TODO: might want a simple method for getting the index / item
 }
 
-StatusBoard.prototype.deleteItem = function(id)
-{
-    var item = this.smap[id];
-    if(typeof item !== 'undefined')
-    {
-        console.log('StatusBoard:deleteItem: removing id - [' + id + ']');
-        var itemIndex = this.s.indexOf(item);
-        this.s.splice(itemIndex, 1);
-        delete this.smap[id];
-        this.incrementVersion();
-    }
-    else
-    {
-        console.log('StatusBoard:deleteItem: id not found - [' + id + ']');
-    }
-}
-
+/*
+ Updates a status board item
+ @param {string} itemId - The item to update
+ @param {object} postObj - The post data object with the fields to update the new status board item
+ */
 StatusBoard.prototype.updateItem = function(itemId, postObj)
 {
     logger.logDebug('updateItem called: ' + this.id + ':' + itemId);
@@ -128,11 +156,38 @@ StatusBoard.prototype.updateItem = function(itemId, postObj)
     }
 }
 
+/*
+ Deletes the item specified
+ @param {string} itemId - The id of the item to delete
+ */
+StatusBoard.prototype.deleteItem = function(itemId)
+{
+    var item = this.smap[itemId];
+    if(typeof item !== 'undefined')
+    {
+        console.log('StatusBoard:deleteItem: removing id - [' + itemId + ']');
+        var itemIndex = this.s.indexOf(item);
+        this.s.splice(itemIndex, 1);
+        delete this.smap[itemId];
+        this.incrementVersion();
+    }
+    else
+    {
+        console.log('StatusBoard:deleteItem: id not found - [' + itemId + ']');
+    }
+}
+
+/*
+ Gets the version of the status board data
+ */
 StatusBoard.prototype.getDataVersion = function()
 {
     return this.v.toString();
 }
 
+/*
+ Gets the board data as JSON
+ */
 StatusBoard.prototype.getBoardAsJSON = function()
 {
     try
@@ -148,6 +203,12 @@ StatusBoard.prototype.getBoardAsJSON = function()
 }
 
 // TODO: this is for server->client, need another for file save/load
+
+/*
+ Data replacement function for JSON conversions (so the client doesn't get duplicate data)
+ @param {string} key - The object to check
+ @param {object} value - if the object is defined, false otherwise
+ */
 function dataReplacer(key, value)
 {
     if (key === "smap")

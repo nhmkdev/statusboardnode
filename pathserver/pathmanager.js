@@ -66,7 +66,9 @@ PathManager.prototype.getProcessorDataObject = function(urlData, router)
     if(util.defined(processorData) === false)
     {
         logger.logDebug('Testing for sub processor: ' + pathArray[1]);
-        processorData = this.processors[pathArray[1]];
+        // TODO: the '/' makes more sense than not having it in terms of config but still feels like a hack
+        processorData = this.processors['/' + pathArray[1]];
+        //processorData = this.processors[pathArray[1]];
     }
 
     if(util.defined(processorData))
