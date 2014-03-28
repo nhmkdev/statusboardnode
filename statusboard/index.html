@@ -12,28 +12,19 @@
 
 // TODO: status board selector
 
-var statusContainer =
+$(document).ready(function()
 {
-    statusBoardData:{}
-}
+    var statusContainer =
+    {
+        statusBoardData:{}
+    }
 
-var clientLayoutController = new ClientLayoutController(statusContainer);
-var clientCommunicator = new ClientCommunicator(statusContainer);
+    var clientLayoutController = new ClientLayoutController(statusContainer);
+    var clientCommunicator = new ClientCommunicator(statusContainer);
 
-clientCommunicator.setLayoutController(clientLayoutController);
-clientLayoutController.setCommunicator(clientCommunicator);
+    clientCommunicator.setLayoutController(clientLayoutController);
+    clientLayoutController.setCommunicator(clientCommunicator);
 
-</script>
-<head>
-    <style>
-        #statusdata ul { list-style-type: none; margin: 0; padding: 0; margin-bottom: 10px; }
-        #statusdata li { margin: 5px; padding: 5px; width: 100%; }
-    </style>
-    <title>StatusBoard</title>
-</head>
-<body/>
-<script>
-    // TODO: put this in an onload event?
     clientLayoutController.setupLayout();
 
     // initial call to update
@@ -53,5 +44,15 @@ clientLayoutController.setCommunicator(clientCommunicator);
     // AJAX Abort http://stackoverflow.com/questions/446594/abort-ajax-requests-using-jquery
 
     // TODO: the controls for adding items should be up top with divs that expand to allow for custom fields (also the onclick is meh?)
+});
+
 </script>
+<head>
+    <style>
+        #statusdata ul { list-style-type: none; margin: 0; padding: 0; margin-bottom: 10px; }
+        #statusdata li { margin: 5px; padding: 5px; width: 100%; }
+    </style>
+    <title>StatusBoard</title>
+</head>
+<body/>
 </html>

@@ -14,15 +14,6 @@ function ClientLayoutController(statusContainer)
     var that = this;
 
     /*
-     Calls delete item from the context of a given item within a div with the id set to the status board item to delete.
-     This is defined here to cut down on code duplication.
-     */
-    this.itemDeleteButtonFunc = function()
-    {
-        that.communicator.deleteItem($(this).parent().attr('id'));
-    }
-
-    /*
      Definition of the types of inputs required when the user adds a new status board item
      */
     this.itemConfigControls =
@@ -322,7 +313,10 @@ ClientLayoutController.prototype.processUpdate = function()
                     value:'-'
                 },
                 $divItem);
-            deleteButton.click(this.itemDeleteButtonFunc);
+            deleteButton.click(function()
+                {
+                    that.communicator.deleteItem($(this).parent().attr('id'));
+                });
             $divItem.append(deleteButton);
             listItem.append($divItem);
             $statusItemList.append(listItem);
@@ -337,7 +331,7 @@ ClientLayoutController.prototype.processUpdate = function()
     statusDiv.empty();
     statusDiv.append($statusItemList);
     // TODO: investigate all the options on sortable (also is $statusItemList the obj below?)
-    /*$('#statusdatalist')*/$statusItemList.sortable(
+    $statusItemList.sortable(
         {
             start: function(event, ui)
             {

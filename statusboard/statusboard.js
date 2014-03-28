@@ -1,9 +1,24 @@
+var fs = require('fs');
 var config = require('./config');
 var util = require('../pathserver/util');
 var logger = require('../pathserver/logger');
-var pathManager = require('../pathserver/pathmanager')
-var statusBoardCollection = require('./statusboardcollection');
+var pathManager = require('../pathserver/pathmanager');
 var siteFiles = require('./sitefiles');
+
+var statusBoardCollection = {};
+var boardSaveData =
+{
+    boardsToSaveById:new Array(),
+    boardVersions:{}
+};
+//var boardsToSave = new Array();
+
+
+// TODO: make this a config option
+var boardDataPath = './boardfiles/';
+var boardSaveInterval = 10000;
+// TODO: these should remain as just raw functions to avoid conflicting...?
+// TODO: move the collection into this file and delete the other...
 
 /*
  Status board construcor
@@ -26,8 +41,26 @@ function StatusBoard(boardId, description)
  */
 StatusBoard.validateId = function(boardId)
 {
-    // TODO: validate id scheme for board
-    return true;
+    return RegExp('^(\\w){1,32}$','g').test(boardId);
+}
+
+/*
+ Creates a new status board.
+ @param {string} boardId - The object to check
+ @param {object} boardObj - A status board object
+ @return {object/false} - The status board object OR false on error
+ */
+StatusBoard.addExisting = function(boardId, boardObj)
+{
+    if(StatusBoard.validateId(boardId) && boardObj.hasOwnProperty('v'))
+    {
+        statusBoardCollection[boardId] = boardObj;
+        // update the file remapping and add a processor for this board path
+        siteFiles.addRemappedFile('/' + boardId, config.settings.indexfile, config.extensionMap['.html'], true);
+        boardSaveData.boardVersions[boardId] = boardObj.v;
+        return boardObj;
+    }
+    return false;
 }
 
 /*
@@ -38,15 +71,7 @@ StatusBoard.validateId = function(boardId)
  */
 StatusBoard.createNew = function(boardId, postObj)
 {
-    if(StatusBoard.validateId(boardId))
-    {
-        var newBoard = new StatusBoard(boardId, postObj.d);
-        statusBoardCollection[boardId] = newBoard;
-        // update the file remapping and add a processor for this board path
-        siteFiles.addRemappedFile('/' + boardId, config.settings.indexfile, config.extensionMap['.html'], true);
-        return newBoard;
-    }
-    return false;
+    return this.addExisting(boardId, new StatusBoard(boardId, postObj.d));
 }
 
 /*
@@ -182,7 +207,7 @@ StatusBoard.prototype.deleteItem = function(itemId)
  */
 StatusBoard.prototype.getDataVersion = function()
 {
-    return this.v.toString();
+    return JSON.stringify({ v:this.v });
 }
 
 /*
@@ -218,4 +243,78 @@ function dataReplacer(key, value)
     return value;
 }
 
-module.exports = StatusBoard;
+/*
+ Loads all the board data from a file
+ */
+function loadBoards()
+{
+    var files = fs.readdirSync(boardDataPath);
+
+    for(var idx = 0, len = files.length; idx < len; idx++)
+    {
+        var boardData = JSON.parse(fs.readFileSync(boardDataPath + files[idx]));
+        var boardId = util.getProperty(boardData['id'], null);
+        if(null != boardId)
+        {
+            var success = StatusBoard.addExisting(boardId, boardData);
+            logger.log('Load Board: ' + files[idx] + ' (' + boardId + ') ' + (success ? 'SUCCESSFUL' : 'FAILED'));
+        }
+    }
+
+    setTimeout(saveBoards, boardSaveInterval);
+}
+
+/*
+ Saves all the board data to a file
+ */
+function saveBoards()
+{
+    boardSaveData.boardsToSaveById = new Array();
+    for(var key in statusBoardCollection)
+    {
+        if(statusBoardCollection.hasOwnProperty(key))
+        {
+            var board = statusBoardCollection[key];
+            console.log(boardSaveData.boardVersions[key] + '!=' + board.v);
+            if(boardSaveData.boardVersions[key] != board.v)
+            {
+                boardSaveData.boardsToSaveById.push(key);
+            }
+        }
+    }
+    // even if no items are queued up the save board will trigger saveBoards after the interval
+    saveBoard(0);
+}
+
+/*
+ Saves an individual board from the boardSaveData.boardsToSaveById array
+ @param index - index of the board to attempt to save
+ */
+function saveBoard(index)
+{
+    logger.logDebug('saveBoard evaluating index: ' + index);
+    var boardId = util.getProperty(boardSaveData.boardsToSaveById[index], null);
+    if(boardId != null)
+    {
+        if(statusBoardCollection.hasOwnProperty(boardId))
+        {
+            var boardData = statusBoardCollection[boardId];
+            boardSaveData.boardVersions[boardId] = boardData.v;
+            logger.log('Saving Board: ' + boardId);
+            fs.writeFile(boardDataPath + boardData.id, JSON.stringify(boardData), function()
+            {
+                setTimeout(function() { saveBoard(index+1); }, 1);
+            });
+        }
+    }
+    else
+    {
+        logger.log('All boards saved. Waiting ' + boardSaveInterval + '...');
+        setTimeout(saveBoards, boardSaveInterval);
+    }
+}
+
+loadBoards();
+
+exports.StatusBoard = StatusBoard;
+exports.StatusBoardCollection = statusBoardCollection;

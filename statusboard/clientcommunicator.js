@@ -83,8 +83,9 @@ ClientCommunicator.prototype.requestUpdate = function(forceUpdate)
             this.getBoardUrl(),
             function(response, code, xhr)
             {
-                that. updatePending = false;
-                if(that.statusContainer.statusBoardData.v != response)
+                that.updatePending = false;
+                var dataVersion = getProperty(response['v'], -1);
+                if(that.statusContainer.statusBoardData.v != dataVersion)
                 {
                     // mismatched version, request full update
                     console.log('data version mismatch forcing update');

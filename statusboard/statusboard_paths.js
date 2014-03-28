@@ -3,10 +3,11 @@ var webutil = require('../pathserver/webutil');
 var logger = require('../pathserver/logger');
 var pathManager = require('../pathserver/pathmanager');
 
-var siteFiles = require('./sitefiles');
 var config = require('./config');
-var statusBoardCollection = require('./statusboardcollection');
-var StatusBoard = require('./statusboard');
+var sb = require('./statusboard');
+
+var statusBoardCollection = sb.StatusBoardCollection;
+var StatusBoard = sb.StatusBoard;
 
 var pathFunc = {};
 
