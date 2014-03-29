@@ -213,7 +213,7 @@ ClientCommunicator.prototype.getBoardList = function()
     var that = this;
     this.ajaxGETRequest(
         null,
-        window.location.origin + '/boards',
+        window.location.origin + '/boards/list',
         function(response, code, xhr)
         {
             console.log(response);

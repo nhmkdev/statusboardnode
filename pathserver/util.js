@@ -10,7 +10,7 @@ function hasAllProperties(obj)
     {
         for(var x = 1, len = arguments.length; x < len; x++)
         {
-            if(!Util.defined(obj[arguments[x]]))
+            if(!defined(obj[arguments[x]]))
             {
                 return false;
             }

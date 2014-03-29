@@ -217,7 +217,7 @@ pathManager.addProcessor(
 pathManager.addProcessor(config.settings.urlPathBoards, pathManager.createProcessorDataObject('get', getBoards));
 
 // TODO: SAMPLE TEMP DATA
-var testData = StatusBoard.createNew('test', {d:'Test Status Board'});
+/*var testData = StatusBoard.createNew('test', {d:'Test Status Board'});
 testData.addItem(null, {t:'text', d:'Test Field', v:{ t: 'test5' }});
 testData.addItem(null, {t:'text', d:'Another Field', v:{ t: 'test13'}});
-statusBoardCollection['test'] = testData;
+*/

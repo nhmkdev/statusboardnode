@@ -1,4 +1,5 @@
 // TODO: files could be string or object allowing remapping of path (/file with source of /folder/file)
+// todo: shared client config file? (client needs some of the paths like urlPathBoards)
 exports.settings =
 {
 	port:8888, // server port
@@ -11,8 +12,8 @@ exports.settings =
     validFiles:{},
     remappedFiles:{},
     postProcessFileFuncs: {},
-    urlPathBoards:'/boards', // access to the list of boards
-    urlPathBoard:'/board', // access to a given board
+    urlPathBoards:'/boards/list', // access to the list of boards
+    urlPathBoard:'/board', // access to a given board //board/{id}
     // TODO: eventually break this into modes based on type of client (web vs. mobile vs. whatever)
     indexfile:'/statusboard/index.html', // relative path to index.html file (TODO: maybe rename to statusboard.html)
     debug:true // flag for whether the log various things to the console

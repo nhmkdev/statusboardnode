@@ -21,7 +21,7 @@ var boardSaveInterval = 10000;
 // TODO: move the collection into this file and delete the other...
 
 /*
- Status board construcor
+ Status board constructor
  @param {string} boardId - The board identifier (used in the url to access)
  @param {string} description - The description of the board
  */
@@ -33,6 +33,23 @@ function StatusBoard(boardId, description)
     this.id = boardId;
     this.d = description;
     this.smap = {}; // mapping of the items by 'i' field into the set array
+}
+
+StatusBoard.loadFromObject = function(boardObj)
+{
+    if(util.hasAllProperties(boardObj, 'id', 'd'))
+    {
+        var board = new StatusBoard(boardObj.id, boardObj.d);
+        board.s = boardObj.s;
+        board.v = boardObj.v;
+        board.i = boardObj.i;
+        return board;
+    }
+    else
+    {
+        logger.log("Loaded board object missing id or d field.")
+    }
+    return null;
 }
 
 /*
@@ -52,12 +69,16 @@ StatusBoard.validateId = function(boardId)
  */
 StatusBoard.addExisting = function(boardId, boardObj)
 {
-    if(StatusBoard.validateId(boardId) && boardObj.hasOwnProperty('v'))
+    if(StatusBoard.validateId(boardId))
     {
         statusBoardCollection[boardId] = boardObj;
         // update the file remapping and add a processor for this board path
         siteFiles.addRemappedFile('/' + boardId, config.settings.indexfile, config.extensionMap['.html'], true);
         boardSaveData.boardVersions[boardId] = boardObj.v;
+
+        // repopulate the smap
+        util.createArrayToObjectMap(boardObj.s, 'i', boardObj.smap);
+
         return boardObj;
     }
     return false;
@@ -165,12 +186,9 @@ StatusBoard.prototype.updateItem = function(itemId, postObj)
     var targetObj = this.smap[itemId];
     if(util.defined(targetObj) && util.defined(sourceObj))
     {
-        // TODO: any need for allowing type to change?
-        //targetObj.t = sourceObj.t;
         targetObj.v = sourceObj.v;
         this.incrementVersion();
-        if(config.settings.debug)
-        {
+        if (config.settings.debug) {
             // extra check so as to not waste processing time on the json.stringify calls
             logger.logDebug('updateItems: OldValue:' + JSON.stringify(targetObj.v) + ' NewValue:' + JSON.stringify(sourceObj.v));
         }
@@ -256,7 +274,8 @@ function loadBoards()
         var boardId = util.getProperty(boardData['id'], null);
         if(null != boardId)
         {
-            var success = StatusBoard.addExisting(boardId, boardData);
+            var statusBoard = StatusBoard.loadFromObject(boardData);
+            var success = (statusBoard == null) ? false : StatusBoard.addExisting(boardId, statusBoard);
             logger.log('Load Board: ' + files[idx] + ' (' + boardId + ') ' + (success ? 'SUCCESSFUL' : 'FAILED'));
         }
     }
@@ -275,7 +294,7 @@ function saveBoards()
         if(statusBoardCollection.hasOwnProperty(key))
         {
             var board = statusBoardCollection[key];
-            console.log(boardSaveData.boardVersions[key] + '!=' + board.v);
+            //console.log(boardSaveData.boardVersions[key] + '!=' + board.v);
             if(boardSaveData.boardVersions[key] != board.v)
             {
                 boardSaveData.boardsToSaveById.push(key);
@@ -301,7 +320,7 @@ function saveBoard(index)
             var boardData = statusBoardCollection[boardId];
             boardSaveData.boardVersions[boardId] = boardData.v;
             logger.log('Saving Board: ' + boardId);
-            fs.writeFile(boardDataPath + boardData.id, JSON.stringify(boardData), function()
+            fs.writeFile(boardDataPath + boardData.id, JSON.stringify(boardData, dataReplacer), function()
             {
                 setTimeout(function() { saveBoard(index+1); }, 1);
             });

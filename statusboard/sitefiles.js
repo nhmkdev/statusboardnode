@@ -93,14 +93,13 @@ function loadIndex()
         // blocking -- if this file is missing nothing will work!
         var extData = config.extensionMap['.html'];
         var fileData = fs.readFileSync('.' + config.settings.indexfile, {encoding:extData.encoding});
-        var combinedIndex = fileData.toString().replace('<!--JQUERYUICSS-->', '<link rel="stylesheet" href="' + config.settings.jqueryuicss + '">');
-        combinedIndex = combinedIndex.replace('<!--JQUERYSCRIPT-->', '<script src="' + config.settings.jqueryscript + '"></script>');
-        combinedIndex = combinedIndex.replace('<!--JQUERYUISCRIPT-->', '<script src="' + config.settings.jqueryuiscript + '"></script>');
-        combinedIndex = combinedIndex.replace('<!--UTILSCRIPT-->', '<script src="' + config.settings.utilscript + '"></script>');
-        combinedIndex = combinedIndex.replace('<!--CLIENTCOMMSCRIPT-->', '<script src="' + config.settings.clientcommunicatorscript + '"></script>');
-        combinedIndex = combinedIndex.replace('<!--CLIENTLAYOUTCRIPT-->', '<script src="' + config.settings.clientlayoutcontrollerscript + '"></script>');
-        indexData = combinedIndex;
-        fileCache[config.settings.indexfile] = indexData;
+        fileCache[config.settings.indexfile] = fileData.toString()
+            .replace('<!--JQUERYUICSS-->', '<link rel="stylesheet" href="' + config.settings.jqueryuicss + '">')
+            .replace('<!--JQUERYSCRIPT-->', '<script src="' + config.settings.jqueryscript + '"></script>')
+            .replace('<!--JQUERYUISCRIPT-->', '<script src="' + config.settings.jqueryuiscript + '"></script>')
+            .replace('<!--UTILSCRIPT-->', '<script src="' + config.settings.utilscript + '"></script>')
+            .replace('<!--CLIENTCOMMSCRIPT-->', '<script src="' + config.settings.clientcommunicatorscript + '"></script>')
+            .replace('<!--CLIENTLAYOUTCRIPT-->', '<script src="' + config.settings.clientlayoutcontrollerscript + '"></script>');
         addRemappedFile('/', config.settings.indexfile, extData);
         logger.logDebug('Loaded Index File.');
     }
