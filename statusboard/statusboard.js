@@ -6,19 +6,13 @@ var pathManager = require('../pathserver/pathmanager');
 var siteFiles = require('./sitefiles');
 
 var statusBoardCollection = {};
+
 var boardSaveData =
 {
     boardsToSaveById:new Array(),
     boardVersions:{}
 };
-//var boardsToSave = new Array();
-
-
-// TODO: make this a config option
-var boardDataPath = './boardfiles/';
-var boardSaveInterval = 10000;
 // TODO: these should remain as just raw functions to avoid conflicting...?
-// TODO: move the collection into this file and delete the other...
 
 /*
  Status board constructor
@@ -35,9 +29,13 @@ function StatusBoard(boardId, description)
     this.smap = {}; // mapping of the items by 'i' field into the set array
 }
 
+/*
+ Loads a status board from an object.
+ @param (object) boardObj - The object containing the definitions for the status board
+ */
 StatusBoard.loadFromObject = function(boardObj)
 {
-    if(util.hasAllProperties(boardObj, 'id', 'd'))
+    if(util.hasAllProperties(boardObj, 'id', 'd', 's', 'v', 'i'))
     {
         var board = new StatusBoard(boardObj.id, boardObj.d);
         board.s = boardObj.s;
@@ -266,11 +264,11 @@ function dataReplacer(key, value)
  */
 function loadBoards()
 {
-    var files = fs.readdirSync(boardDataPath);
+    var files = fs.readdirSync(config.settings.boardDataPath);
 
     for(var idx = 0, len = files.length; idx < len; idx++)
     {
-        var boardData = JSON.parse(fs.readFileSync(boardDataPath + files[idx]));
+        var boardData = JSON.parse(fs.readFileSync(config.settings.boardDataPath + files[idx]));
         var boardId = util.getProperty(boardData['id'], null);
         if(null != boardId)
         {
@@ -280,7 +278,7 @@ function loadBoards()
         }
     }
 
-    setTimeout(saveBoards, boardSaveInterval);
+    setTimeout(saveBoards, config.settings.boardSaveInterval);
 }
 
 /*
@@ -320,7 +318,7 @@ function saveBoard(index)
             var boardData = statusBoardCollection[boardId];
             boardSaveData.boardVersions[boardId] = boardData.v;
             logger.log('Saving Board: ' + boardId);
-            fs.writeFile(boardDataPath + boardData.id, JSON.stringify(boardData, dataReplacer), function()
+            fs.writeFile(config.settings.boardDataPath + boardData.id, JSON.stringify(boardData, dataReplacer), function()
             {
                 setTimeout(function() { saveBoard(index+1); }, 1);
             });
@@ -328,8 +326,8 @@ function saveBoard(index)
     }
     else
     {
-        logger.log('All boards saved. Waiting ' + boardSaveInterval + '...');
-        setTimeout(saveBoards, boardSaveInterval);
+        logger.log('All boards saved. Waiting ' + config.settings.boardSaveInterval + '...');
+        setTimeout(saveBoards, config.settings.boardSaveInterval);
     }
 }
 

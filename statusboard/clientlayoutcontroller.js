@@ -179,6 +179,24 @@ function getRadioChangeFunc(layoutController, item)
     };
 }
 
+ClientLayoutController.prototype.toggleBoardElements = function(enableBoardElements)
+{
+    if(enableBoardElements)
+    {
+        $('#config').show();
+        $('#boardSelect').hide();
+        $('#statusboardlayout').show();
+        $('#boardsListRight').show();
+    }
+    else
+    {
+        $('#config').hide();
+        $('#boardSelect').show();
+        $('#statusboardlayout').hide();
+        $('#boardsListRight').hide();
+    }
+}
+
 /*
  Configures the entire layout of the status board (the variable elements)
  */
@@ -187,7 +205,7 @@ ClientLayoutController.prototype.setupLayout = function()
     var that = this;
     var $body = $(document.body);
 
-    var $titleDiv = this.createElement('div', null, $body);
+    var $titleDiv = this.createElement('div', { id:'title' }, $body);
     $titleDiv.text('StatusBoard');
 
     var $boardSelect = this.createElement('div',
@@ -195,6 +213,23 @@ ClientLayoutController.prototype.setupLayout = function()
             id:'boardSelect'
         },
         $body);
+
+    var $boardsListRight = this.createElement('div', { id:'boardsListRight'}, $body);
+
+    var $boardsButton = this.createElement(
+        'input',
+        {
+            type:'button',
+            value:'Board List'
+        },
+        $boardsListRight)
+        .click(function()
+        {
+            that.toggleBoardElements(false);
+            that.communicator.getBoardList();
+        });
+
+    //this.createElement('br', null, $body);
 
     var $configDiv = this.createElement('div',
         {
@@ -250,6 +285,7 @@ ClientLayoutController.prototype.setupLayout = function()
             value:'Add Item'
         },
         $addConfigDiv);
+
     $submitBtn.click(function()
     {
         // TODO: error check a bit?
@@ -264,16 +300,24 @@ ClientLayoutController.prototype.setupLayout = function()
             active: false
         });
 
-    $body.append($(document.createElement('hr')));
+    $statusBoardLayout = this.createElement('div',
+        {
+            id:'statusboardlayout'
+        },
+        $body);
+
+    $statusBoardLayout.append($(document.createElement('hr')));
 
     // add the data div
     this.createElement('div',
         {
             id:'statusdata'
         },
-        $body);
+        $statusBoardLayout);
 
-    $body.append($(document.createElement('hr')));
+    $statusBoardLayout.append($(document.createElement('hr')));
+
+    this.toggleBoardElements(false);
 }
 
 // TODO: use validator.w3.org
@@ -323,7 +367,7 @@ ClientLayoutController.prototype.processUpdate = function()
         }
         else
         {
-
+            // TODO
         }
     }
 
@@ -362,6 +406,7 @@ ClientLayoutController.prototype.resetBoards = function(boards)
 {
     var $boardList = $('#boardSelect');
     $boardList.empty();
+    $boardList.append(document.createElement('br'));
     var that = this;
     for(var idx = 0, len = boards.length; idx < len; idx++)
     {
@@ -376,7 +421,10 @@ ClientLayoutController.prototype.resetBoards = function(boards)
             },
             $boardList);
         // TODO: could the id be stored on the control so the function isn't duplicated across all buttons?
-        $boardButton.click(function() { that.communicator.setBoardId(board.i); });
+        $boardButton.click(function()
+        {
+            that.communicator.setBoardId(board.i);
+        });
     }
 }
 

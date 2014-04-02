@@ -34,6 +34,7 @@ ClientCommunicator.prototype.setBoardId = function(boardId)
 {
     this.boardId = boardId;
     this.requestUpdate(true);
+    this.layoutController.toggleBoardElements(true);
 }
 
 /*
@@ -193,7 +194,7 @@ ClientCommunicator.prototype.moveItem = function(itemId, destination)
 {
     var that = this;
     this.ajaxPOSTRequest(
-        {action:'moveitem', i:itemId, d:destination},
+        {action:'moveitem', d:destination},
         this.getBoardItemUrl(itemId),
         function(response, code, xhr)
         {

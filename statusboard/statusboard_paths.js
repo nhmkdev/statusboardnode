@@ -189,6 +189,7 @@ pathManager.addProcessor(
      @param {array} pathArray - The url split by '/'
      @param {object} urlData - The data from node.js url.parse
      @param {object} router - The request method handler
+     @return {object} An object created by PathManager.createProcessorDataObject OR null
      */
     function(pathArray, urlData, router)
     {

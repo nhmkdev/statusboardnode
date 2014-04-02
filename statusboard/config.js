@@ -9,13 +9,14 @@ exports.settings =
     utilscript:'/pathserver/util.js',
     clientcommunicatorscript:'/statusboard/clientcommunicator.js',
     clientlayoutcontrollerscript:'/statusboard/clientlayoutcontroller.js',
-    validFiles:{},
-    remappedFiles:{},
-    postProcessFileFuncs: {},
+    indexfile:'/statusboard/index.html', // relative path to index.html file (TODO: maybe rename to statusboard.html)
+
+    boardDataPath:'./boardfiles/', // path to load and save boards to/from
     urlPathBoards:'/boards/list', // access to the list of boards
     urlPathBoard:'/board', // access to a given board //board/{id}
+
+    boardSaveInterval:30000, // how often to see if the boards need to be persisted to disc
     // TODO: eventually break this into modes based on type of client (web vs. mobile vs. whatever)
-    indexfile:'/statusboard/index.html', // relative path to index.html file (TODO: maybe rename to statusboard.html)
     debug:true // flag for whether the log various things to the console
 };
 

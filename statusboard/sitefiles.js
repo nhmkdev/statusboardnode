@@ -159,7 +159,7 @@ function addPathProcessors()
     {
         if(validFiles.hasOwnProperty(filePath))
         {
-            pathManager.addProcessor(filePath, pathManager.createProcessorDataObject('get', getFile, filePath));
+            pathManager.addProcessor(filePath, pathManager.createProcessorDataObject('get', getFile));
         }
     }
     logger.log('Added sitefiles path processors.');

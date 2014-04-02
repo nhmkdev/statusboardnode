@@ -25,7 +25,11 @@ function PathManager()
  Adds a url path processor
  @param {object/function} objOrFunc - The object as created by PathManager.prototype.createProcessorDataObject OR a function
  that returns an object created by PathManager.prototype.createProcessorDataObject. Prototype for function is as follows:
- function(pathArray, urlData, router) -- TODO: details of the params
+ function(pathArray, urlData, router) --
+     @param {array} pathArray - The url split by '/'
+     @param {object} urlData - The data from node.js url.parse
+     @param {object} router - The request method handler
+    @return {object} An object created by PathManager.createProcessorDataObject OR null
  */
 PathManager.prototype.addProcessor = function(urlPath, objOrFunc)
 {
@@ -104,7 +108,7 @@ PathManager.prototype.getProcessorDataObject = function(urlData, router)
  @param {function} func - The function to execute when this request should be processed
  func needs to have this prototype: (response, postObj, urlData, additionalargs...)
 
- @param {array} additionalArgs - Array of additional parameters to pass to the request processor
+ @param {array/object} additionalArgs - Array of additional parameters to pass to the request processor OR a single object
  @return {object} ProcessorObject for use with the PathManager
  */
 PathManager.prototype.createProcessorDataObject = function(method, func, additionalArgs)
